@@ -1,0 +1,6 @@
+syntax: glob
+*.pyc
+parser.out
+parsetab.py
+
+
