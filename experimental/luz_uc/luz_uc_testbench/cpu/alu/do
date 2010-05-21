@@ -1,0 +1,40 @@
+set PrefSource(font) {{Courier New} 10 roman normal}
+
+echo "<<!!!!>> Setting NumericStdNoWarnings and StdArithNoWarnings to 1 <<!!!!>>" 
+set NumericStdNoWarnings 1
+set StdArithNoWarnings  1
+destroy .wave
+onerror {resume}
+restart -f -nowave
+
+
+add wave -noupdate -color "Pink" -format Logic /clk
+add wave -noupdate -color "Yellow" -format Logic /reset_n
+
+add wave -DIVIDER ports
+add wave -noupdate -format Logic /clk
+add wave -noupdate -format Logic /reset_n
+add wave -noupdate -format Logic /op
+add wave -noupdate -format Literal -radix hex /arg1
+add wave -noupdate -format Literal -radix hex /arg2
+add wave -noupdate -format Literal -radix hex /output_a
+add wave -noupdate -format Literal -radix hex /output_b
+
+add wave -DIVIDER uut_signals
+
+run 100 us
+
+WaveRestoreZoom {0 ns} {2001 ns}
+WaveRestoreCursors {0 ns}
+view -undock wave
+
+TreeUpdate [SetDefaultTree]
+configure wave -namecolwidth 250
+configure wave -valuecolwidth 150
+configure wave -justifyvalue left
+configure wave -signalnamewidth 2          
+configure wave -snapdistance 10
+configure wave -datasetprefix 0
+configure wave -rowmargin 4
+configure wave -childrowmargin 2
+

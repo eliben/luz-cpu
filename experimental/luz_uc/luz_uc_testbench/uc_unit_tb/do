@@ -1,0 +1,80 @@
+set PrefSource(font) {{Courier New} 10 roman normal}
+set NumericStdNoWarnings 1
+set StdArithNoWarnings  1
+destroy .wave
+onerror {resume}
+restart -f -nowave
+
+add wave -noupdate -color "Pink" -format Logic /clk
+add wave -noupdate -color "Yellow" -format Logic /reset_n
+add wave -noupdate -format Logic /halt
+
+add wave -DIVIDER dut_signals
+add wave -noupdate -format Logic /dut/cpu_cyc_o
+add wave -noupdate -format Logic /dut/cpu_stb_o
+add wave -noupdate -format Logic /dut/cpu_we_o
+add wave -noupdate -format Literal -radix hex /dut/cpu_sel_o
+add wave -noupdate -format Logic /dut/cpu_adr_o
+add wave -noupdate -format Logic /dut/cpu_data_o
+add wave -noupdate -format Logic /dut/cpu_ack_i
+add wave -noupdate -format Logic /dut/cpu_err_i
+add wave -noupdate -format Logic /dut/cpu_data_i
+add wave -noupdate -format Logic /dut/cpu_irq_i
+add wave -noupdate -format Logic /dut/cpu_halt
+add wave -noupdate -format Logic /dut/cpu_ifetch
+add wave -noupdate -format Logic /dut/cpu_core_reg_read_sel
+add wave -noupdate -format Logic /dut/cpu_core_reg_read_data
+add wave -noupdate -format Logic /dut/cpu_core_reg_write_sel
+add wave -noupdate -format Logic /dut/cpu_core_reg_write_strobe
+add wave -noupdate -format Logic /dut/cpu_core_reg_write_data
+
+add wave -DIVIDER cpu
+add wave -noupdate -format Logic /dut/cpu_map/pc_in
+add wave -noupdate -format Logic /dut/cpu_map/pc_write
+add wave -noupdate -format Logic /dut/cpu_map/pc_out
+
+add wave -DIVIDER controller
+add wave -noupdate -format Logic /dut/cpu_map/controller_map/cycle
+add wave -noupdate -format Literal -radix hex /dut/cpu_map/controller_map/PC_ff
+add wave -noupdate -format Literal -radix hex /dut/cpu_map/controller_map/NPC_ff
+
+add wave -DIVIDER memory
+add wave -noupdate -format Logic /dut/mem_cyc_i
+add wave -noupdate -format Logic /dut/mem_stb_i
+add wave -noupdate -format Logic /dut/mem_we_i
+add wave -noupdate -format Literal -radix hex /dut/mem_sel_i
+add wave -noupdate -format Literal -radix hex /dut/mem_adr_i
+add wave -noupdate -format Literal -radix hex /dut/mem_data_i
+add wave -noupdate -format Logic /dut/mem_ack_o
+add wave -noupdate -format Logic /dut/mem_err_o
+add wave -noupdate -format Literal -radix hex /dut/mem_data_o
+
+
+add wave -noupdate -format Literal -radix hex /dut/user_memory_map/memory/mem
+
+
+if {$argc == 1} {
+    run $1
+} else {
+    if {[find sig test_num] != ""} {
+        while {[examine test_num] != 999999} {
+            run 1 ms
+        }
+    } else {
+        run 1 ms
+    }
+}
+
+WaveRestoreZoom {0 ns} {2001 ns}
+WaveRestoreCursors {0 ns}
+view -undock wave
+
+TreeUpdate [SetDefaultTree]
+configure wave -namecolwidth 250
+configure wave -valuecolwidth 150
+configure wave -justifyvalue left
+configure wave -signalnamewidth 2          
+configure wave -snapdistance 10
+configure wave -datasetprefix 0
+configure wave -rowmargin 4
+configure wave -childrowmargin 2

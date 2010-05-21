@@ -1,0 +1,15 @@
+# Simple code that adds values in registers r15..r18 and places
+# result in r1
+#
+    .segment code
+    .global addregs_func
+addregs_func:
+    add $r1, $zero, $r15
+    add $r1, $r1, $r16
+    add $r1, $r1, $r17
+    add $r1, $r1, $r18
+    ret
+
+
+
+

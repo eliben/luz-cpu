@@ -1,0 +1,63 @@
+# Tests how the procedures work
+#
+    .segment code
+    .global asm_main
+
+    .define ADDR_DEBUG_QUEUE, 0xF0000
+
+asm_main:
+    # $k0 always points to ADDR_DEBUG_QUEUE
+    # since it's a reserved "kernel" register, we're putting it 
+    # to a good use here.
+    #
+    li $k0, ADDR_DEBUG_QUEUE
+    ori $s3, $zero, 0xABBA
+    
+    # Prepare arguments for prime_sieve
+    #
+    ori $a0, $zero, 20  # upto_num
+    li $a1, prime_arr   # address of output array
+    ori $a2, $zero, 6   # maxprimes
+    call prime_sieve
+ 
+    li $t5, 0xFAFAFAFA
+    sw $t5, 0($k0)
+    
+    move $t4, $v0       # t4 = nprimes 
+    move $t3, $zero     # t3 counts the primes for display
+show_loop:
+    slli $t2, $t3, 2    # t2 = t3 * 4
+    add $t2, $t2, $a1   # t2 points to next prime_arr
+    
+    lw $t1, 0($t2)
+    sw $t1, 0($k0)
+    
+    addi $t3, $t3, 1    # t3++
+    bltu $t3, $t4, show_loop
+   
+    li $k1, 0xEEEEBAAB
+    sw $k1, 0($k0)
+    
+    # Check how intsqrt works
+    # ... for a small number
+    #
+    ori $a0, $zero, 20
+    call intsqrt
+    sw $v0, 0($k0)
+    
+    # ... and for a large number
+    li $a0, 103456
+    call intsqrt
+    sw $v0, 0($k0)
+    
+    nop
+    halt
+
+
+    .segment data
+
+prime_arr:
+    .word 0
+    .alloc 100
+
+

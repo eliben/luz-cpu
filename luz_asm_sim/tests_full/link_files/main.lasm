@@ -1,0 +1,13 @@
+    .segment code
+    .global asm_main
+asm_main:
+    # load all the bytes from 'mydata1' into separate registers
+    li $r9, mydata1
+    lbu $r15, 0($r9)
+    lbu $r16, 1($r9)
+    lbu $r17, 2($r9)
+    lbu $r18, 3($r9)
+    
+    call addregs_func
+    move $r2, $r1
+    halt

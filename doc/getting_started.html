@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
+<title>Getting started with Luz</title>
+<meta name="author" content="Eli Bendersky" />
+<meta name="date" content="27-Apr-2010" />
+<style type="text/css">
+
+/*
+:Author: David Goodger (goodger@python.org)
+:Id: $Id: html4css1.css 5951 2009-05-18 18:03:10Z milde $
+:Copyright: This stylesheet has been placed in the public domain.
+
+Default cascading style sheet for the HTML output of Docutils.
+
+See http://docutils.sf.net/docs/howto/html-stylesheets.html for how to
+customize this style sheet.
+*/
+
+/* used to remove borders from tables and images */
+.borderless, table.borderless td, table.borderless th {
+  border: 0 }
+
+table.borderless td, table.borderless th {
+  /* Override padding for "table.docutils td" with "! important".
+     The right padding separates the table cells. */
+  padding: 0 0.5em 0 0 ! important }
+
+.first {
+  /* Override more specific margin styles with "! important". */
+  margin-top: 0 ! important }
+
+.last, .with-subtitle {
+  margin-bottom: 0 ! important }
+
+.hidden {
+  display: none }
+
+a.toc-backref {
+  text-decoration: none ;
+  color: black }
+
+blockquote.epigraph {
+  margin: 2em 5em ; }
+
+dl.docutils dd {
+  margin-bottom: 0.5em }
+
+/* Uncomment (and remove this text!) to get bold-faced definition list terms
+dl.docutils dt {
+  font-weight: bold }
+*/
+
+div.abstract {
+  margin: 2em 5em }
+
+div.abstract p.topic-title {
+  font-weight: bold ;
+  text-align: center }
+
+div.admonition, div.attention, div.caution, div.danger, div.error,
+div.hint, div.important, div.note, div.tip, div.warning {
+  margin: 2em ;
+  border: medium outset ;
+  padding: 1em }
+
+div.admonition p.admonition-title, div.hint p.admonition-title,
+div.important p.admonition-title, div.note p.admonition-title,
+div.tip p.admonition-title {
+  font-weight: bold ;
+  font-family: sans-serif }
+
+div.attention p.admonition-title, div.caution p.admonition-title,
+div.danger p.admonition-title, div.error p.admonition-title,
+div.warning p.admonition-title {
+  color: red ;
+  font-weight: bold ;
+  font-family: sans-serif }
+
+/* Uncomment (and remove this text!) to get reduced vertical space in
+   compound paragraphs.
+div.compound .compound-first, div.compound .compound-middle {
+  margin-bottom: 0.5em }
+
+div.compound .compound-last, div.compound .compound-middle {
+  margin-top: 0.5em }
+*/
+
+div.dedication {
+  margin: 2em 5em ;
+  text-align: center ;
+  font-style: italic }
+
+div.dedication p.topic-title {
+  font-weight: bold ;
+  font-style: normal }
+
+div.figure {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+div.footer, div.header {
+  clear: both;
+  font-size: smaller }
+
+div.line-block {
+  display: block ;
+  margin-top: 1em ;
+  margin-bottom: 1em }
+
+div.line-block div.line-block {
+  margin-top: 0 ;
+  margin-bottom: 0 ;
+  margin-left: 1.5em }
+
+div.sidebar {
+  margin: 0 0 0.5em 1em ;
+  border: medium outset ;
+  padding: 1em ;
+  background-color: #ffffee ;
+  width: 40% ;
+  float: right ;
+  clear: right }
+
+div.sidebar p.rubric {
+  font-family: sans-serif ;
+  font-size: medium }
+
+div.system-messages {
+  margin: 5em }
+
+div.system-messages h1 {
+  color: red }
+
+div.system-message {
+  border: medium outset ;
+  padding: 1em }
+
+div.system-message p.system-message-title {
+  color: red ;
+  font-weight: bold }
+
+div.topic {
+  margin: 2em }
+
+h1.section-subtitle, h2.section-subtitle, h3.section-subtitle,
+h4.section-subtitle, h5.section-subtitle, h6.section-subtitle {
+  margin-top: 0.4em }
+
+h1.title {
+  text-align: center }
+
+h2.subtitle {
+  text-align: center }
+
+hr.docutils {
+  width: 75% }
+
+img.align-left, .figure.align-left{
+  clear: left ;
+  float: left ;
+  margin-right: 1em }
+
+img.align-right, .figure.align-right {
+  clear: right ;
+  float: right ;
+  margin-left: 1em }
+
+.align-left {
+  text-align: left }
+
+.align-center {
+  clear: both ;
+  text-align: center }
+
+.align-right {
+  text-align: right }
+
+/* reset inner alignment in figures */
+div.align-right {
+  text-align: left }
+
+/* div.align-center * { */
+/*   text-align: left } */
+
+ol.simple, ul.simple {
+  margin-bottom: 1em }
+
+ol.arabic {
+  list-style: decimal }
+
+ol.loweralpha {
+  list-style: lower-alpha }
+
+ol.upperalpha {
+  list-style: upper-alpha }
+
+ol.lowerroman {
+  list-style: lower-roman }
+
+ol.upperroman {
+  list-style: upper-roman }
+
+p.attribution {
+  text-align: right ;
+  margin-left: 50% }
+
+p.caption {
+  font-style: italic }
+
+p.credits {
+  font-style: italic ;
+  font-size: smaller }
+
+p.label {
+  white-space: nowrap }
+
+p.rubric {
+  font-weight: bold ;
+  font-size: larger ;
+  color: maroon ;
+  text-align: center }
+
+p.sidebar-title {
+  font-family: sans-serif ;
+  font-weight: bold ;
+  font-size: larger }
+
+p.sidebar-subtitle {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+p.topic-title {
+  font-weight: bold }
+
+pre.address {
+  margin-bottom: 0 ;
+  margin-top: 0 ;
+  font: inherit }
+
+pre.literal-block, pre.doctest-block {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+span.classifier {
+  font-family: sans-serif ;
+  font-style: oblique }
+
+span.classifier-delimiter {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+span.interpreted {
+  font-family: sans-serif }
+
+span.option {
+  white-space: nowrap }
+
+span.pre {
+  white-space: pre }
+
+span.problematic {
+  color: red }
+
+span.section-subtitle {
+  /* font-size relative to parent (h1..h6 element) */
+  font-size: 80% }
+
+table.citation {
+  border-left: solid 1px gray;
+  margin-left: 1px }
+
+table.docinfo {
+  margin: 2em 4em }
+
+table.docutils {
+  margin-top: 0.5em ;
+  margin-bottom: 0.5em }
+
+table.footnote {
+  border-left: solid 1px black;
+  margin-left: 1px }
+
+table.docutils td, table.docutils th,
+table.docinfo td, table.docinfo th {
+  padding-left: 0.5em ;
+  padding-right: 0.5em ;
+  vertical-align: top }
+
+table.docutils th.field-name, table.docinfo th.docinfo-name {
+  font-weight: bold ;
+  text-align: left ;
+  white-space: nowrap ;
+  padding-left: 0 }
+
+h1 tt.docutils, h2 tt.docutils, h3 tt.docutils,
+h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
+  font-size: 100% }
+
+ul.auto-toc {
+  list-style-type: none }
+
+</style>
+</head>
+<body>
+<div class="document" id="getting-started-with-luz">
+<h1 class="title">Getting started with Luz</h1>
+<table class="docinfo" frame="void" rules="none">
+<col class="docinfo-name" />
+<col class="docinfo-content" />
+<tbody valign="top">
+<tr><th class="docinfo-name">Author:</th>
+<td>Eli Bendersky</td></tr>
+<tr><th class="docinfo-name">Contact:</th>
+<td><a class="first last reference external" href="mailto:eliben&#64;gmail.com">eliben&#64;gmail.com</a></td></tr>
+<tr><th class="docinfo-name">Date:</th>
+<td>27-Apr-2010</td></tr>
+</tbody>
+</table>
+<div class="contents topic" id="table-of-contents">
+<p class="topic-title first">Table of Contents</p>
+<ul class="auto-toc simple">
+<li><a class="reference internal" href="#introduction" id="id2">1&nbsp;&nbsp;&nbsp;Introduction</a><ul class="auto-toc">
+<li><a class="reference internal" href="#what-is-luz" id="id3">1.1&nbsp;&nbsp;&nbsp;What is Luz?</a></li>
+<li><a class="reference internal" href="#license" id="id4">1.2&nbsp;&nbsp;&nbsp;License</a></li>
+<li><a class="reference internal" href="#what-is-luz-useful-for" id="id5">1.3&nbsp;&nbsp;&nbsp;What is Luz useful for?</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id1" id="id6">2&nbsp;&nbsp;&nbsp;Getting started with Luz</a><ul class="auto-toc">
+<li><a class="reference internal" href="#documentation" id="id7">2.1&nbsp;&nbsp;&nbsp;Documentation</a></li>
+<li><a class="reference internal" href="#dependencies" id="id8">2.2&nbsp;&nbsp;&nbsp;Dependencies</a></li>
+<li><a class="reference internal" href="#structure-of-the-source-tree" id="id9">2.3&nbsp;&nbsp;&nbsp;Structure of the source tree</a></li>
+<li><a class="reference internal" href="#running-examples" id="id10">2.4&nbsp;&nbsp;&nbsp;Running examples</a><ul class="auto-toc">
+<li><a class="reference internal" href="#the-simple-loop-example" id="id11">2.4.1&nbsp;&nbsp;&nbsp;The simple loop example</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#what-s-next" id="id12">2.5&nbsp;&nbsp;&nbsp;What's next?</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="introduction">
+<h1><a class="toc-backref" href="#id2">1&nbsp;&nbsp;&nbsp;Introduction</a></h1>
+<p>This document will help you get started using / hacking on Luz. It doesn't explain Luz in any depth - read <tt class="docutils literal">doc/luz_user_manual.html</tt> for that.</p>
+<div class="section" id="what-is-luz">
+<h2><a class="toc-backref" href="#id3">1.1&nbsp;&nbsp;&nbsp;What is Luz?</a></h2>
+<p>Luz is an open-source CPU suite. The suite includes:</p>
+<ul class="simple">
+<li>A fully functional simulator of the Luz 32-bit RISC CPU.</li>
+<li>An assembler and a linker for code written in the Luz assembly (LASM) language.</li>
+</ul>
+<p>In the future, Luz will also feature a complete synthesizable VHDL implementation of the CPU. For the time being, a partial implementation is available in the <tt class="docutils literal">experimental</tt> directory of the Luz source code tree.</p>
+</div>
+<div class="section" id="license">
+<h2><a class="toc-backref" href="#id4">1.2&nbsp;&nbsp;&nbsp;License</a></h2>
+<p>Unless otherwise specified, Luz is licensed with the GNU LGPL license. A copy of the license is available in the <tt class="docutils literal">doc</tt> directory, or on GNU's website.</p>
+</div>
+<div class="section" id="what-is-luz-useful-for">
+<h2><a class="toc-backref" href="#id5">1.3&nbsp;&nbsp;&nbsp;What is Luz useful for?</a></h2>
+<p>I don't know yet. It's a self-educational project of mine, and I learned a lot by working on it. I suppose that Luz's main value is as an educational tool. Its implementation focuses on simplicity and modularity, and is done in Python, which is a portable and very readable high-level language.</p>
+<p>Luz can serve as a sample of implementing a complete assembler, a complete linker, a complete CPU simulator. Other such tools exist, but usually not in the clean and self-contained form offered by Luz. In any case, if you've found Luz iseful, I'd love to receive feedback.</p>
+</div>
+</div>
+<div class="section" id="id1">
+<h1><a class="toc-backref" href="#id6">2&nbsp;&nbsp;&nbsp;Getting started with Luz</a></h1>
+<div class="section" id="documentation">
+<h2><a class="toc-backref" href="#id7">2.1&nbsp;&nbsp;&nbsp;Documentation</a></h2>
+<p>The Luz documentation is collected in the <tt class="docutils literal">doc</tt> directory. It's written in plain text files, in reStructuredText format, and is converted to HTML with the <tt class="docutils literal">doc/src/__gen_html.py</tt> script.</p>
+<p>First and foremost, you must get familiar with Luz by reading its user's manual (<tt class="docutils literal">doc/luz_asm_manual.html</tt>). This document assumes some knowledge of computer architecture, assembly language and programming.</p>
+</div>
+<div class="section" id="dependencies">
+<h2><a class="toc-backref" href="#id8">2.2&nbsp;&nbsp;&nbsp;Dependencies</a></h2>
+<p>Luz is implemented in pure Python. To run it, you need to have a couple of things installed:</p>
+<ul class="simple">
+<li>Python version 2.6 or 3.1</li>
+<li>The PLY Python library, which you can obtain from its website (google it). Luz works with all recent versions of PLY</li>
+</ul>
+<p>I'm developing Luz mainly on Windows and Linux, but any other platform where you can install Python and PLY should be fine.</p>
+</div>
+<div class="section" id="structure-of-the-source-tree">
+<h2><a class="toc-backref" href="#id9">2.3&nbsp;&nbsp;&nbsp;Structure of the source tree</a></h2>
+<ul class="simple">
+<li><tt class="docutils literal">doc</tt>: Documentation</li>
+<li><tt class="docutils literal">experimental</tt>: Experimental code and features (not currently suitable for use)</li>
+<li><tt class="docutils literal">luz_asm_sim</tt>: The Luz assembler/linker and simulator:</li>
+</ul>
+<blockquote>
+<ul class="simple">
+<li><tt class="docutils literal">luz_asm_sim/lib</tt>: The implementation of Luz</li>
+<li><tt class="docutils literal">luz_asm_sim/tests_full</tt>: Full tests of Luz that also serve as examples</li>
+<li><tt class="docutils literal">luz_asm_sim/tests_unit</tt>: Unit tests for Luz</li>
+</ul>
+</blockquote>
+</div>
+<div class="section" id="running-examples">
+<h2><a class="toc-backref" href="#id10">2.4&nbsp;&nbsp;&nbsp;Running examples</a></h2>
+<p>Luz has a framework of &quot;full tests&quot; in <tt class="docutils literal">luz_asm_lib/tests_full</tt>. Each full test is a directory with one or more <tt class="docutils literal">.lasm</tt> files that implement a program in Luz assembly language (LASM). The full tests serve two roles:</p>
+<ul class="simple">
+<li>As examples of using Luz</li>
+<li>For testing the Luz suite on complete programs</li>
+</ul>
+<p>The <tt class="docutils literal">tests_full/README.txt</tt> explains in more detail how to run the full tests. Here I want to focus on one simple example.</p>
+<div class="section" id="the-simple-loop-example">
+<h3><a class="toc-backref" href="#id11">2.4.1&nbsp;&nbsp;&nbsp;The simple loop example</a></h3>
+<p>Open <tt class="docutils literal">tests_full/loop_simple</tt>. In there you'll find a LASM file named <tt class="docutils literal">loop.asm</tt>. Open it and take a look. This is a program that computes the sum of an array. The array is defined statically in the <tt class="docutils literal">.data</tt> segment, and the program itself starts with the <tt class="docutils literal">asm_main</tt> symbol (as all LASM programs should start - see the user's manual for more details). It iterates over the array in a loop and sums it into the <tt class="docutils literal">$r8</tt> register.</p>
+<p>Take a few minutes to study the code: if you've seen any other assembly code before, it should be simple to understand. Consult the user's manual for the meaning of individual instructions.</p>
+<p>Now, to run the example, go back to <tt class="docutils literal">tests_full</tt> and execute:</p>
+<pre class="literal-block">
+python run_test_interactive.py -i loop_simple
+</pre>
+<p>You should see something like:</p>
+<pre class="literal-block">
+LUZ simulator started at 0x00100000
+
+[0x00100000] [lui $sp, 0x13] &gt;&gt;
+</pre>
+<p>This is the <em>interactive shell</em> of the Luz simulator that allows you to execute the code step-by step, viewing the contents of registers, and so on. If this sounds like a debugger, you're right - it is. Type <tt class="docutils literal">help</tt> to see the available commands and what they mean. Note that <tt class="docutils literal">run_test_interactive.py</tt> can also run the whole test from start to finish, without the interactive prompt. Run it with <tt class="docutils literal"><span class="pre">-h</span></tt> to see the options.</p>
+<p>Execute the following commands:</p>
+<pre class="literal-block">
+[0x00100000] [lui $sp, 0x13] &gt;&gt; s 100
+[0x00100038] [halt] &gt;&gt; set alias 0
+[0x00100038] [halt] &gt;&gt; r
+$r0   = 0x00000000     $r1   = 0x00000000     $r2   = 0x00000000     $r3   = 0x00000000
+$r4   = 0x00000000     $r5   = 0x00100050     $r6   = 0x00100050     $r7   = 0x00000000
+$r8   = 0x0000021F     $r9   = 0x0010003C     $r10  = 0x00000000     $r11  = 0x00000000
+$r12  = 0x00000000     $r13  = 0x00000000     $r14  = 0x00000000     $r15  = 0x00000000
+$r16  = 0x00000000     $r17  = 0x00000000     $r18  = 0x00000000     $r19  = 0x00000000
+$r20  = 0x00000000     $r21  = 0x00000000     $r22  = 0x00000000     $r23  = 0x00000000
+$r24  = 0x00000000     $r25  = 0x00000000     $r26  = 0x00000000     $r27  = 0x00000000
+$r28  = 0x00000000     $r29  = 0x0013FFFC     $r30  = 0x00000000     $r31  = 0x0010000C
+</pre>
+<ul class="simple">
+<li>The first command asks the simulator to step through 100 instructions</li>
+<li>The second command disables displaying register alias names since the LASM code of <tt class="docutils literal">loop_simple</tt> doesn't use them (see the user's manual about alias names)</li>
+<li>The third command asks Luz to display the contents of all registers.</li>
+</ul>
+<p>As you can see, the simulator is now at a <tt class="docutils literal">halt</tt> instruction, which means the CPU stopped executing (&quot;halted&quot;). <tt class="docutils literal">$r8</tt> holds the sum of the array. Now you can enter the <tt class="docutils literal">q</tt> command to quit the interactive simulator.</p>
+<p>The other examples can be run similarly.</p>
+</div>
+</div>
+<div class="section" id="what-s-next">
+<h2><a class="toc-backref" href="#id12">2.5&nbsp;&nbsp;&nbsp;What's next?</a></h2>
+<p>What's next depends on what you want to do with Luz. If you want to practice some assembly programming, just write LASM code, consulting the user's manual. If you want to hack on Luz, study the code (a developer's guide is planned for the near future...)</p>
+</div>
+</div>
+</div>
+</body>
+</html>

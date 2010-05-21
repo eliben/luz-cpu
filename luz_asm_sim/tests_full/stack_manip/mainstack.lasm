@@ -1,0 +1,52 @@
+# The main code.
+
+    # some data in memory
+    .segment data
+savesp:
+    .word 0
+
+    .segment code
+    .global asm_main
+asm_main:
+    # save original value of $sp in savesp
+    li $r20, savesp
+    sw $sp, 0($r20)
+    
+    # push some values on the stack, one by one
+    li $r2, 0x45678901
+    li $r3, 0xABBACEED
+    subi $sp, $sp, 4
+    sw $r2, 0($sp)
+    subi $sp, $sp, 4
+    sw $r3, 0($sp)
+    
+    # now a few values placed together with a single push
+    addi $r4, $zero, 0x12
+    addi $r5, $zero, 0x98
+    addi $r6, $zero, 0xFFFF
+    subi $sp, $sp, 12
+    sw $r4, 8($sp)
+    sw $r5, 4($sp)
+    sw $r6, 0($sp)
+    
+    # add all values on stack together into $r8
+    move $r8, $zero
+    lw $r19, 0($sp)
+    add $r8, $r8, $r19
+    lw $r19, 4($sp)
+    add $r8, $r8, $r19
+    lw $r19, 8($sp)
+    add $r8, $r8, $r19
+    lw $r19, 12($sp)
+    add $r8, $r8, $r19
+    lw $r19, 16($sp)
+    add $r8, $r8, $r19
+    
+    # pop all from stack
+    addi $sp, $sp, 20
+    
+    # load original value of stack from savesp into r9
+    lw $r9, 0($r20)
+    
+    nop
+    halt

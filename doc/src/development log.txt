@@ -1,0 +1,813 @@
+--------------------------
+12.02.2008 - Initial plans
+--------------------------
+
+The idea is to implement a complete CPU suite, including:
+
+- A synthesizable CPU in VHDL
+- A bus to connect the CPU to memories and peripherals, also synthesizable VHDL
+- Optional: a debug interface (that will work via RS232) that allows to debug the CPU on-board
+- An assembler (translating a made-up assembly language with convenient mnemonics into a binary memory image the CPU to execute
+- Wishful thinking: a C compiler ?
+
+The goals are:
+
+- To learn and understand the whole process, practice various technologies.
+- Performance is not very important; extendibility is.
+- Build the CPU for embedded systems - not number crunching. Many interrupts, convenient connection to peripherals, no floating point unit.
+- In the future, many advanced concepts can be added: cache, pipelining, branch prediction and so on. To make this useful, I'll have to have comprehensive benchmarks to compare the performance gains.
+
+Some design considerations:
+
+- Most probably a RISC, without too many addressing modes, overly complex instructions. With a constant instruction execution time, operations on registers (not on memory), with load and store instructions, many general-purpose registers, many interrupts.
+- Little Endian. 8-bit, 16-bit, 32-bit CPU ?
+- Inspiration: MIPS, Altera's Nios II, DLX
+- Harvard or Von Neumann architecture ? Harvard is good when there's a fast instruction memory and a slower data memory. Since I plan the CPU to be for on-chip purposes, perhaps this is an unneeded complication ?
+- Bus: pick something generic. OpenCores's Wishbone looks like a good choice. I want all peripherals to be memory mapped (like in Nios II), and to allow easily adding new peripherals and tying them to the system bus.
+
+
+------------------------
+14.02.2008 - Ruminations
+------------------------
+
+I will probably go for a Von Neumann architecture since it is simpler and more generic. Regarding the instruction and data memory for the CPU: I can either make all the memory attach to the CPU via the main bus (Wishbone), or leave some amount attached directly to the CPU.
+Advantages of the second approach:
+- Faster access via a dedicated 1-cycle synchronous interface.
+- No need to flood the main bus for each instruction fetch
+Disadvantages:
+- Less extensible
+- Requires an internal decoder that knows when to turn to the bus and when to the internal memory
+
+I doubt that it will be possible to execute instructions "in general" in a single clock cycle (without a pipeline), because instructions have to be fetched from the memory, which in itself takes at least a cycle. Maybe go for somethihg like PIC's 4-clk "instruction cycle".
+
+Thoughts on the instruction set:
+
+DLX and Nios II have very similar instruction set encodings (I think it's safe to assume that either Nios II borrowed from DLX or they've both borrowed from some "common ancestor"). Perhaps for my simple RISC it would be good to adopt the same basics.
+
+Some common addressing modes:
+- Register: "add r4, r3" executes "[r4] <- [r4] + [r3]"
+- Immediate: "add r4, 120" executes "[r4] <- [r4] + 120"
+- Displacement: "add r4, 100(r1)" executes "[r4] <- [r4] + mem(100 + [r1])"
+- Register indirect: "add r4, (r1)" executes "[r4] <- mem([r1])". This can be implemented with displacement and an immediate of 0, so it's not really a separate mode.
+- Absolute: "add r4, (1001)" executes "[r4] <- mem(1001)". This can be implemented with displacement and a special register r0 which is always 0 (add r4, 1001(r0))
+
+However, I wonder - wouldn't it be simpler, and hence better for my goals, to leave all the memory accesses to load/store instructions only. It means that, for example executing "add r4, 100(r1)" I'd have to write:
+
+load r3, 100(r1)        ; this is a _load_ in displacement mode
+add r4, r3              ; a "normal" add in register mode
+
+Perhaps this really isn't simpler, I'll have to see when I start implementing.
+
+
+-----------------------------
+17.02.2008 - More ruminations
+-----------------------------
+
+"Test" instructions in the DLX are called "relational instructions". They are given a register to set when their condition holds. For example:
+
+seq r4, r3, r30
+
+Sets r30 to 1 if r4 == r3. Then a branch instruction can ask about r30, and branch if it is (or isn't) zero. For example, the following sequence:
+
+seq r4, r3, r30
+bnez r30, my_label
+
+Jumps to my_label if r4 == r3.
+
+Nios II, on the other hand, uses the following technique to achieve the same:
+
+beq r4, r3, my_label
+
+In both DLX and Nios II the label is limited to 16-bit. The linker is required to handle cases where a larger jump offset is required.
+
+The DLX has a special 'halt' instruction that makes the processor halt, awaiting a reset, and raising a hardware line. This sounds useful for debugging.
+
+A name for the CPU: I gave it some thought, and I'll probably name the CPU "luz". Although it has no acronymized meaning, it's short and easily pronounceable. If you insist on a meaning, "luz" in Spanish means "light", but also "electricity" and "enlightment" - the last two sounding close to what a CPU really means under the hood - an enlightened use of electricity :-)
+
+
+-------------------------
+19.02.2008 - Architecture
+-------------------------
+
+I will begin by using Wishbone for the main CPU bus, including instruction fetching. If I won't succeed fetching data fast enough via Wishbone, I'll consider adding a separate built-in RAM that will be very fast (what Nios II calls "tightly coupled memory").
+
+So, what kind of interface does the CPU need:
+
+Basically, a simplified Wishbone master interface with a couple of additions because of it being an embedded CPU - such as interrupt request lines.
+
+* clk, reset_n (asynchronous, but the SYSCON module can generate a synchronous one as well)
+* ack_i, adr_o(32), data_io(32), cyc_o, sel_o(2), stb_o, we_o
+* irq(32)
+* halt (1 when reached a 'halt' instruction)
+* ifetch (1 when the current bus cycle is for fetching an instruction)
+
+The last two signals are kindly borrowed from DLX and will be used for debugging and profiling.
+
+About the general architecture:
+I plan Luz to be a microcontroller - a CPU augmented with some useful digital peripherals (UARTs, timers, and so on), along with a Wishbone bus model that connects everything together and allows extension. Therefore, the following nomenclature is required: uC - the microcontroller with everything in it, CPU - only the central processing unit that fetches instructions and executes them. This is also reflected in the directory structure I've created as a skeleton:
+
+luz/
+    luz_uc/    
+        luz_uc_rtl/        
+                cpu/     
+                peripherals/ 
+                ...
+        luz_uc_testbench/
+                ...
+                ...
+    luz_asm/
+        ...
+        ...
+
+
+--------------------------
+21.02.2008 - Coding begins
+--------------------------
+
+I've began writing the VHDL code for the CPU. The first module to come to life is "registers" - the general purpose register file. In its initial design, it has two read ports and one write port. All the ports are synchronous to the clock. Therefore, if some other module wants to read a register, it has to wait one clock cycle. A welcome effect of the synchronous design is that simultaneous reads and writes are possible, to the same register.
+
+Also wrote the skeleton for the ALU module which performs the actual computations in the CPU.
+
+
+----------------
+25.02.2008 - ISA
+----------------
+
+Defined the Luz ISA (Instruction Set Architecture). At the moment it has the following 33 basic instructions (which are very similar to MIPS):
+
+Arithmerical:
+ADD, ADDI, SUB, SUBI, MULU, MUL, DIVU, DIV, LUI
+
+Logical:
+SLL, SRL, AND, ANDI, OR, ORI, NOR, XOR
+
+Jumps & branches:
+B, JR, BEQ, BGE, BGT, BLE, BLT
+
+Loads and stores:
+LB, LH, LW, LBU, LHU, SB, SH, SW
+
+Other conveniences borrowed from MIPS/DLX: r0 is always 0. This allows to easily implement some pseudo-instructions in the assembler. For example:
+
+ADD Rd, Rs, R0  ==> "MOVE Rd, Rs"
+BEQ Rs, R0, offset  ==> "BEQZ Rs, offset"
+ADDI R0, R0, 0  ==> NOP
+
+Other pseudo-instructions can be constructed from building blocks:
+
+NOR Rd, Rs, Rs  ==> "NOT Rd, Rs"
+
+Began implementing the ALU to compute the operations defined in this ISA.
+
+
+-------------------
+25.02.2008 - Memory
+-------------------
+
+Luz is a 32-bit CPU. Hence, it should be able to access a 32-bit memory in order to load and store whole 32-bit words in a single clock cycle. But access to bytes (8-bit) and half-words (16 bits) should also be allowed. These accesses will be aligned. That is, accesses to half-words must be made to addresses that are a multiple of two, and accesses to words to addresses that are a multiple of four.
+
+To ensure that this mode of memory access works correctly, some support circuitry must be added to the memory decoding logic.
+
+The Wishbone signal sel_o will be used to access bytes and half-words in the memory. For example, to access byte from address 0x00000003 in a 32-bit port memory, the address will be set to: 0x00000000 and sel_o to "1000" to access only byte #3 in this word.
+
+I've created a simulation memory model for the on-chip memory that connects to the CPU via a Wishbone interface. For synthesis, this memory can be replaced with an Altera memory mega-function (wrapped with Wishbone interface logic).
+
+
+-------------------------------
+30.03.2008 - Thoughts on memory
+-------------------------------
+
+Completed the development and testing of sim_memory_onchip_wb - a module that simulates an onchip memory with Wishbone interface. It can also accept an initialization file in Intel HEX format (similarly to Alteras's mega-function memories).
+
+This module will be used for the initial simulations of the CPU, and in the future for unit testing and debugging.
+
+As I've mentioned before, Luz will be a Von Neumann architecture - both code and data will reside in the same address space - the main memory. The peripherals should also be mapped into the main memory. 
+Luz is 32-bit, so the address space is 4GBytes. Most likely only a small portion of this will be occupied, so I'll probably need some kind of a memory manager that knows when unassigned memory is accessed and... what ? generates an exception ? I still haven't thought about exceptions for Luz.
+
+Also, how easily should this architecture be customizable ? For example, if I want to increase the internal memory. Should there be a complete set of scripts (akin to Altera's SOPC builder) ? The other extreme is to leave it static. Additionally, there should probably be some support for an external memory, but then I need a whole memory access unit that knows for each bank how many wait states to put in, and so on. This unit will be addressable via registers, and here the allowable space can be customized as well. This is somewhat similar to the way the MPC555 memory controller works.
+
+
+---------------------------
+03.08.2008 - More on memory
+---------------------------
+
+The last paragraph in the previous post is problematic. If Luz is designed to be soft-core from the start, then why is a MPC-like memory controller needed ? Isn't it better to follow the route taken by Nios - all the peripherals / external memories are handled by a smart crossbar which is auto-generated (or configured) from the system definition ? After all, it's all the memory controller in MPC does, but that one must be dynamically programmable to allow customization.
+
+
+--------------------------------------------
+07.08.2008 - Began controller implementation
+--------------------------------------------
+
+Began implementing the main CPU controller, with 5 cycles: instruction_fetch, decode_register_fetch, execution, memory_access and write_back.
+
+
+-----------------------------
+11.08.2008 - CALL instruction
+-----------------------------
+
+Added the CALL instruction to simplify invocation of procedures, saving the return address in R31 automatically. Decided to name it CALL (as in Nios) and not JAL (as in MIPS / DLX). Also, added the RET pseudo-instruction (which is equivalent to 'JR R31') for returning from procedures.
+
+MIPS also has JALR (and Nios CALLR), but at the moment I don't see the point. Is this used for calling functions via a pointer ? Anyway, I can always add this later if I need it.
+
+
+---------------------------------------------
+12.08.2008 - Assembler implementation started
+---------------------------------------------
+
+I began writing the assembler for the Luz assembly language. The assembly language itself will be loosely based on the MIPS assembly syntax, with many things omitted for simplicity.
+
+This is the right stage to begin the assembler, because I want to be sure of the exact ISA I want to implement in the CPU. Writing an assembler (and later a simulator) will provide an opportunity to experiment with the ISA and be more confident about it while implementing the CPU controller. Since the assembler is written in Python, it is much easier to modify and play with than a complex VHDL-coded CPU controller which isn't too flexible to change and added instructions.
+
+
+--------------------------------------------------
+13.08.2008 - Assembler implementation and thoughts
+--------------------------------------------------
+    
+I've mostly completed implementing the parser for the assembly language. The parser for now is very flexible - it only recognizes syntax, but doesn't actually know which directives and instructions are correct. It builds an intermediate form from the code that makes it easy for the next stage to check for instruction and directive validity and generate the binary code.
+
+I can define all the instructions in a configuration file. For each instruction I will define the arguments it expects and its translation into binary code. The assembler, after parsing the code, will consult this configuration for each instruction it runs into. This way, adding and changing instructions will be very easy.
+
+Also, such a configuration file can define the pseudo-instructions which are translated to other instructions.
+
+I wonder which directives to allow. Specification of a data and text segment ? Simple specification of byte and string data ? Linkage directives (such as defining a symbol to be global) ? What else is needed for a fully functional assembler ?
+
+
+----------------------
+18.08.2008 - Assembler
+----------------------
+
+1. Format of the instruction configuration file
+
+I've prototyped a YAML-based configuration format for specifying how instructions are read and translated, but it becomes way too complex. Therefore, the format is going to change into an "internal DSL". Classes derived from a common Instruction class, with the goal of making them short and easy to define.
+
+2. Two-pass architecture of the assembler
+
+The assembler will work in the classic two-pass way. In the first pass, it handles directives, expands pseudo-instructions and builds a symbol table of labels->addresses.
+In the second pass, it actually assembles the instructions into binary code, substituting the labels where required.
+
+3. Separate assembler and linker stages
+
+To support compilation from C, I have to provide separate assembler and linker stages. The assembler will turn assembly source files into object files, and the linker will link them together into a single executable object, and create a memory image file from it.
+
+4. External labels & relocation table
+
+Some labels referenced in instructions will not be found in the local symbol table, because they are external (defined in other source files). In addition, some labels in the file can be declared global for usage in other files. 
+Also, since when a single file is assembled all the memory references are relative to some arbitrary starting point (0), some of them will need to be relocated when the file is loaded into memory.
+For example, suppose that a file has a label 'func', that was given the address 0x680 by the assembler. Now, the linker has decided to place this object file into location 0x20000 in memory. If any instruction in the file references 'func' in an absolute manner (for example, a CALL instruction), its reference must be fixed to 0x20680. Instructions that reference 'func' in a relative manner (branches) don't need to be fixed.
+
+Therefore, the output of the assembler, the object file, contains the following information:
+
+* The code and data specified in the source file, compiled into binary code. Maybe it will be divided into text and data segments (or even more, like in Nios ?)
+
+* A symbol table containing:
+  + A list of global labels defined in this source file, with their addresses (relatively to its beginning)
+  + A list of unresolved label referenced in this file, pointing to the instructions in which they are referenced.
+
+* A relocation table containing:
+  + All absolute references to internal labels that need to be relocated once the object is given an absolute address.
+
+-*-
+Resolving external labels probably isn't too hard. The relocation table, however, looks quite complicated. First, when will it be needed ? Only when labels are referenced in an absolute manner. 
+This happens in CALL and the pseudo-instruction LI. LI is the most problematic, because it gets split into two instructions (LUI and ORI), and both must be flagged for relocation of the absolute reference.
+
+Another concern: should I allow referencing external labels in relative branches ? There seems to be no real sense to do it, because external labels are only for procedure invocation (or data access), and relative branches have nothing to do with it. This will also simplify implementation. It basically means that the only instructions that ever need to be handled by the relocation and label resolution are CALL and LI, because these are the only ones that deal with absolute labels.
+
+
+----------------------
+19.08.2008 - Assembler
+----------------------
+
+As I noted previously, the most problematic instructions in terms of the relocation table and external references are CALL and LI. 
+
+- In all relative branches I will only allow local labels
+- In other instructions that refer to immediates (ADDI, ORI, etc.) I want to disallow all labels, because (1) labels refer to addresses and these instructions have nothing to do with addresses, and (2) there's only 16-bit available for immediates in these instructions, and labels refer to 32-bit addresses.
+
+** CALL
+
+- If it refers to an undefined label, this label will be added to the unresolved labels table in the output. The entry must point back to the instruction to allow the linker to fix it.
+- If it refers to a 'relocatable' address (a local label), it will be added to the relocation table, and the linker will later fix it with the required offset.
+
+** LI
+
+LI is more problematic because it's a pseudo-instruction that gets translated to two instructions:
+
+LI    Rd, const32
+ \
+  \--> LUI Rd, const32[31:16]
+   \-> ORI Rd, Rd, const32[15:0]
+
+There are two problems with this:
+1) I've just said that I want to disallow labels in instructions like LUI and ORI. 
+2) When LI references a local label, it will have to be added to the relocation table. But the label it references gets split to two instructions. This somewhat complicates the definition of the relocation table, and injects a complication into the linker as well.
+3) This really complicates my plans of having a nice'n generic way of specifying instructions and pseudo-instructions as a DSL, because LI has to receive very special treatment.
+
+Possible solutions to these problems:
+1) There are a couple approaches here:
+ a. Just allow labels labels in all immediate-referencing instructions. Those which refer to local labels, will have to be added to the relocation table.
+ b. Somehow treat the generated instructions specially, and allow labels only in them
+2) The relocation table will have to accomodate a way to point to such instructions, requesting the linker to read the address from two places (MSB-16 and LSB-16), combine them, add the offset, split it to 2 and put it back.
+
+Anyway, I don't see a way around LI. It's a crucial instruction that will be used often (to index variables, for example). And there's no other way to implement it, because it refers to a 32-bit address which won't fit into any single instruction.
+
+** Directives
+
+The directives I currently plan to support:
+
+.segment name 
+    Subsequent lines will be assembled into the specified segment.
+
+.global label  
+    declare the label to be global (exported)
+
+.define name, value
+    defines a constant that can be used in immediate values. constants have to be defined before they are used
+
+.string str
+    store the string in memory null-terminated
+
+.byte b1 .. bN
+    store bytes in memory, in successive addresses
+
+.word w1 .. wN
+    stores words in memory, in successive addresses
+
+.alloc n
+    allocate n bytes from here on. n must be a number (not a constant defined with .define)
+
+There's also the issue of alignment. Should special alignment directives be introduced or is it better to keep things automatic ? Automatic means that instructions will always be on 4-byte word boundaries, i.e.:
+
+    .alloc 9
+    nop
+
+'nop' will begin at address 12 and not 9, because instructions have to be word-aligned. The space at addresses 9-11 is "lost".
+
+All the numbers (for byte and word values, and for the value of .define are either decimal (42) or hex (0x2A))
+
+The first pass of the assembler will take note of the following directives, to correctly compute its location pointer: .string, .byte, .word, .alloc
+
+
+---------------------
+30.10.2008 - Segments
+---------------------
+
+It makes sense to support arbitrary segments that can be defined by the assembly coder. The C compiler will probably just have to create the .text, .data and .bss labels it needs, but this can be made more flexible. For instance, various blocks of code and data can be placed in different memories very easily if they're assembled into distinct segments.
+
+
+--------------------------------------------
+02.11.2008 - Relocation and label references
+--------------------------------------------
+
+** Relocation
+
+I've completed the first pass of the assembler that builds the symbol table, so it's time to think about relocation, since it's the only point still unclear about the implementation.
+
+For a start, I'll go with the strictest approach which simplifies the implementation:
+
+* Label references will only be allowed in relative branches (where they present no problem relocation-wise), and in LI and CALL instructions. 
+* Labels will not be allowed in other instructions, including individual LUI and ORI, because all other instructions expect 16-bit immediates.
+* The relocation table will consist of a pointer to the instruction being relocated and the relocation type.
+* For now, two relocation types are required: 
+  - For CALL instructions  - extracts the jump address, adds to it the relocation address and shoves it back.
+  - For LUI/ORI pairs generated by LI. Since these two will always come in pairs, the relocation entry will point to the first (LUI), and the linker will know to relocate both.
+
+In the future, if I decide to allow labels in other instructions, new relocation types can be added.
+
+** Label references
+
+Label references will be only allowed in:
+* Relative branches - where the labels must be local and not imported
+* CALL instructions, where the labels can be imported
+* LI instructions, where the labels can be imported
+
+The import table will have to work similarly to the relocation table, with types that the linker recognizes and knows how to insert into the instruction words (with a similar trick for the ORI/LUI pair)
+
+
+-------------------------------------
+12.11.2008 - Assembly of instructions
+-------------------------------------
+
+Completed coding the "instruction constructors" - functions that construct the binary code from various instructions. Included support for import and relocation "requests" for CALL and LI instructions.
+
+Now what's left is to construct the second pass of the assembly that implements directives and uses the instruction constructors to build the complete assembled code.
+
+
+----------------------------------
+13.11.2008 - Assembler second pass
+----------------------------------
+
+The output of the second pass is the output of the assembler - the object data. It's the data the linker can take and link to other object data to form a complete binary image of an executable.
+
+The object data will contain:
+
+1) Segments, keyed by names. For each segment, a binary string of assembled data is kept. The first byte in the string is at address 0 of the segment.
+
+2) Export symbols: a list of symbol (label) names, with a (segment, offset) pair for each. This points to where the symbol is defined in this object data.
+
+3) Import symbols: a list of symbol (label) names, with a (type, segment, offset) tuple for each. This points to the instruction which expects the linker to recompute the correct address of the import symbol.
+
+4) Relocation table: a list of segment names, with a (type, segment, offset) tuple for each. This points to the instruction which expects the linker to recompute the correct address of the relocated segment.
+
+
+--------------------------------------------------
+20.12.2009 - Minor fixes, getting ready to move on
+--------------------------------------------------
+
+It's been a long time!
+
+Some fixes have been made to the assembling code. First of all, LI and CALL instructions can have defined symbols in place of constants too - so I fixed that. An identifier given as an argument to CALL or LI is first checked to be in the defines table. If it isn't there, it's checked in the symbol table and so on.
+
+Also: I've patched the first pass of the assembler to remove .segment directives from the addressed IMF it provides to the second pass, since the second pass doesn't need them.
+
+About output file formats:
+
+* The final output of the assembly/linkage stage should be a single "binary" format that can be loaded into the CPU. I guess it should only contain the binary contents of the memory, perhaps with the code beginning execution at some pre-set memory address. Does it makes sense to make it in Intel HEX format? 
+
+* The output of the assembler is more complex, since it has to contain relocation, import and export tables. The best way is to make it text-based, with the segments' data in hex-coded strings (like Intel-hex) and the rest just text (easily readable and writable, maybe some kind of YAML?). Recall that the segments at this point don't have a loading address (that is set by the linker).
+
+
+-------------------------------------------------------
+22.12.2009 - Completed the second pass of the assembler
+-------------------------------------------------------
+
+Listed the directives supported by the assembler in the ISA file, with exact syntax.
+
+Alignment: each assembly directive will be assembled to fill an integer amount of 4-byte words. For example, ".alloc 5" will actually allocate 8 bytes and not 5. This somewhat simplifies the 2nd pass of the assembler and doesn't add significantly to fragmentation.
+
+The second pass of the assembler was completed. It creates data for segments, and the import, export and relocation tables. It still has to be extensibly tested, but first I'm going to implement an ObjectFile object that represents an object file created by the assembler. 
+
+ObjectFile is intented to represent a relocatable Luz object file - it serializes the object information into a file and allows the linker to read it back at a later stage.
+
+
+--------------------------------------
+23.12.2009 - Thinking about the linker
+--------------------------------------
+
+I've hooked the two assembly passes together and added some tests to see how things work. Looks good so far. The ObjectFile object created by the assembler can be directly used by the linker. Later I will also add serialization and de-serialization to it, in order to allow true separate assembly of files.
+
+I should also start thinking about more serious documentation of how the assembler and the linker work. This development log is great, but it can't serve as a formal reference. The only formal documentation I have is the ISA.txt file. I guess it would be best to write a ReST document with everything in it (including the ISA). Look up some newer tools like Sphinx to process it?
+
+Now I should start implementing the linker. The linker's input is several ObjectFile objects, and its output is a binary file (Intel HEX) that can be directly executed by the CPU. For simplicity's sake I can assume that the CPU starts executing at some pre-set address (i.e. 0x1000). 
+
+The linker can look for a global symbol label named '_main' in one of the object files and start executing from it (for example, placing a jump at 0x1000 to the first instruction at _main).
+
+Some issues to consider:
+
+* The same segment (i.e. text, data) can be declared in multiple object files. Relocation and import tables point to instructions relatively to segments defined in that file. Therefore, if object files F1 and F2 both have a text segment, for each of them the part of the text segment will be loaded at a different address. This requires patching to be done not relatively to a "global" text segment, but for each file to the offset where its part of the segment was mapped.
+
+* The imports and exports have to be matched globally: i.e. imports from all objects matched with exports from all objects.
+
+These points make me realize that the first thing the linker should do is probably collect all the similarly named segments from object files together and lay them out in memory. At this point import/export resolution and relocations aren't required. The linker will remember for each segment in each object to where it was mapped in the final linear layout, and only then, using this information import/export resolution and relocations can be performed.
+
+
+--------------------------------------
+24.12.2009 - Started coding the linker
+--------------------------------------
+
+Regarding CPU memory space: the low addresses should be reserved for stuff like reset vector, interrupt vectors, configuration bits, and so on. 
+
+The reset vector can be a single 4-byte instruction that executes a jump to some location. Or it can just be an address from which the CPU will start executing (i.e. shove it to PC and run) These things will probably become clearer when I advance with the implementation of the CPU itself (or the simulator). In any case, for now the linker should be general and flexible enough to allow simple changes.
+
+Regarding code organization: 
+
+The Assembler and Linker should just be classes that can be instantiated. I will then probably create some sort of "main driver" (luz_asm.py?) with command line options that can either assemble files into object files or link object files into executable or do both steps (similarly to how command-line calls to gcc work). The Assembler and Linker files should probably not deal directly with files, but work on in-memory objects. The driver will do all the file handling.
+
+
+----------------------------------------
+28.12.2009 - More thoughts on the linker
+----------------------------------------
+
+MIPS limits the text segment from 0x400000 (start) to 0x1000000 (i.e. roughly 268 MB of code - seems to be enough...), which means that all labels in CALL can reach inside the text segment. CALL's offsets are 26 bits, and they point to the label address divided by 4, so it's 26 bits * 4 = 28 bits. This is exactly 0x10000000. 
+
+I can borrow the same idea, and hence CALL instructions are always suitable for procedure calls. This leaves LI instructions to handle data (which is also what's done in MIPS). At the moment, however, the segments in the assembler and linker are arbitrary (see "Linker generality" below)
+
+Testing methodology: 
+The best way to test that everything works well together is just write complete programs, assemble them, and run through the simulator, expecting known values. Testing each module separately is very development-time consuming. Therefore I will only implement basic tests at the unit level, and leave the heavy testing to the full tests. When bugs will be found, simple unit tests will be added in respective test modules to make sure these bugs caught on the lowest levels and won't appear again.
+
+Linker generality:
+At the moment the linker that I'm coding is very general. It allows arbitrary segments, arbitrary symbols, and so on. This is good since it simplifies things. But towards the end, this generality has to go, because the final memory map file created should have strict formatting (i.e. reset vector, text segment in a special place, some uninitialized data segment that can be large but should not be carried along in the object file and so on). Therefore as much of the code as possible should be general, but towards the "writing out a binary executable file" stage, constraints should be introduced and special policies implemented.
+
+
+----------------------------------------------
+29.12.2009 - Segments needed in the executable
+----------------------------------------------
+
+I'm still unsure as to which segments the linker should support.
+
+The "usual" segments are: 
+
+* text - program code, usually read-only, though in Luz it doesn't have to be [self modifying code fun!!]
+* data - for initialized global data like char buf[4000] = {"hoe"}
+* bss - for uninitialized global data. It usually doesn't take up space in the executable, but created by the "start-up" code and zeroed out.
+
+I'm not sure we need the complexity of the bss now, perhaps we can do with just a text segment + a data segment? Not that it's too complicated - I guess all that needs to be done for it differetly is that the executable file doesn't actually contain anything for it (it's last so this works out), but all the label computations are done like for other segments.
+
+On the other hand, can't we just support completely arbitrary segments here? After all, if I don't care for the text segment to be writable and don't care about the special bss segment, what does it matter, as long as the linker can find some _main symbol and set its address in the reset vector?
+
+
+--------------------------------------------------------
+11.01.2010 - Proceeding with the linker's implementation
+--------------------------------------------------------
+
+Implemented the important _patch_segment_data internal function of the linker. It performs the patches required by imports and relocations to CALL and LI instructions in the data of the segments. It will be used by _resolve_imports and _resolve_relocations.
+
+I've also had some ideas about arranging the memory map created by the linker. First of all, since we're dealing with an embedded CPU here, the memory is quite small. So the linker, apart from the initial offset, should receive an "end_memory" address. The space between the two is the amount of memory available in the CPU system.
+
+The memory map will then look as follows:
+
+end_memory:     +-------------+                
+                |    stack    |   
+                +-------------+  stack pointer
+                       .
+                       .
+                       .
+                +-------------+  heap pointer
+                |             |   
+                |    heap     |
+                |             |
+__heap:         +-------------+  
+                |             |
+                |             |   user's assembled segments
+                |             |
+                +-------------+ 
+                |             |   startup segment (__startup)
+0x100000:       +-------------+
+                |/////////////|
+                |/////////////|   reserved for cpu/peripherals
+                |/////////////|
+0:              +-------------+
+
+
+The idea is: 
+* Assembled segments are arbitrary
+* The linker adds two segments:
+($sp is the stack pointer, say r30):
+
+         .segment __startup
+    LI   $sp, end_memory     # end_memory as a constant, which is 
+                             #... known to the linker
+    CALL asm_main            # should be defined by the user
+    
+        .segment __heap
+        .global __heap
+    __heap:
+        .word 0
+
+The linker treats the __startup and __heap segments in a special way, linking them into the beginning and end of mapped memory, respectively.
+
+The __startup code prepares the $sp register and jumps into asm_main, which is imported from the user's code (the user must define it, just like in C...).
+
+__heap is a placeholder for the __heap label and will be linked after the user's segments. __heap can then be used by the program.
+
+The stack grows down, the heap grows up (stack taken care of by the ABI, heap by system calls like sbrk)
+
+
+-------------------------------------------------------------
+12.01.2010 - Changing register naming + more about the linker
+-------------------------------------------------------------
+
+For convenience changed register names in assembly files to $rN from just rN. It makes them stand out from the regular identifiers. Also, added mnemonic aliases like $zero for $r0 and $sp for $r29.
+
+Advanced with the implementation of the linker - almost finished. All that's left now is to add some simple tests for the image returned by the linker, and it's quite done.
+
+
+----------------------------------------------
+13.01.2010 - Beginning to design the simulator
+----------------------------------------------
+
+I've added some simple tests for the linker - as mentioned before, much more complete tests will be added once the simulator is done.
+
+The simulator should also probably consist of a library (simlib) and a command-line driver. An interesting idea is to add a GUI driver (that shows registers, memory contents, and so on) that will use the same simulation library.
+
+Should the simulator allow system calls like SPIM? I'm not sure, but this can be decided upon later. For now, the simulator should simulate some of the peripherals that will allow interaction with the user. For tests, it can be enough to have some area to place data into (in the reserved region below 0x100000), that can be verified by the tests once the program finishes running.
+
+
+--------------------------------------------------
+14.01.2010 - Code restructure, signed vs. unsigned
+--------------------------------------------------
+
+The first thing for today was a major code restructure. To allow common utility files for the assembler and simulator, I've now placed asmlib and simlib under the same lib, with a commonlib package for both to use (using relative imports)
+
+The tests were taken out into the main luz_sim_asm/ directory. Unit tests will be in tests_unit/ and system tests will be in tests_system/
+
+So far I've ignored the signed/unsigned issue. It looks like I'll have do add some new instructions to sort it out (like signed comparisons). The problem is with the non-equality comparisons - when asking whether X < Y we must define whether the comparison is signed or unsigned.
+
+Different CPUs approach this differently:
+
+* MIPS: has SLT - set on less than (sets $rd depending on the result of $rs < $rt), and an unsigned version SLTU.
+* x86: has condition codes and branches that act upon them. Two versions of each branch: JG (jump greater - signed), JA (jump above - unsigned).
+* SPARC: has condition codes
+* Nios: similarly to MIPS, but has more instructions: CMPGT (compare greater than), CMPGTU (unsigned version) for all kinds of comparisons.
+
+I think that eventually I'll just add unsigned versions to the comparison instructions, without creating a flags register for now.
+
+
+--------------------------
+18.01.2010 - luzsim coding 
+--------------------------
+
+The simulator has already a few instructions implemented - basically arithmetic (including the hairy signed multiplication) and HALT. Also implemented simple unit tests that run a few instructions and check for expected results in registers.
+
+The basic infrastructure of the simulator and the memoryunit module is in-place, and allows to proceed with implementing the other instructions.
+
+Things to think about: 
+* Accessing peripherals and processor's own registers and status (memory-mapped!)
+* What form(s) of IO can the simulator have? Can/should we simulate access to the monitor for printing (i.e. by emulating some peripheral for this purpose?) Maybe Altera's JTAG UART can be an interesting example here
+* How to simulate interrupts and exceptions? Probably have reserved memory locations for specifying exception/interrupt vectors - addresses where the CPU should jump when that occurrs. Which instructions are going to be used for that purpose? Probably LI?
+
+
+-----------------------------
+19.01.2010 - new instructions
+-----------------------------
+
+Continuing with the implementation of the simulator.
+
+Added some new instructions to the CPU:
+
+* SLLI, SRLI: shifts by immediate. It makes sense, because shifting seems like a common need and loading another register just for the shift amount seems like a waste. For example, division by 2 which is done by shifting right by 1, should be done in a single instruction (without SRLI it would need two, unless there's a 1 handy in one of the registers).
+* BGTU, BGEU, BLTU, BLEU: unsigned versions of the comparison-branches. This is essential to allow comfortable treating of register values as signed or unsigned (moving around and adding/subbing doesn't care about signed or unsigned, but for comparisons this is important)
+
+
+-----------------------------------------------------------
+20.01.2010 - CPU memory map - special locations, exceptions
+-----------------------------------------------------------
+
+Considering the memory map of the CPU. Nios has 6 special registers called "control registers". These can be loaded and stored from/to GPRs with special rdctl and wrctl instructions. These registers contain CPU-code functions like the interrupt enables, pending bits, CPU ID, and so on.
+
+Should we have something like this? The original idea was the have this in memory and use normal LW and SW instructions to load/store from registers. But what if all the memory is external? Or can we assume that at least some part of the memory is always internal - i.e. the memory unit maps it to the core. But what about the VHDL? I guess the CPU core can have a small internal memory area for things like this, and the memory unit maps it to some address range (i.e. the lowest 0x1000 address cells).
+
+
+------------------------------------
+21.02.2010 - implementing exceptions
+------------------------------------
+
+I'm beginning to implement exceptions, in a way similar to Nios. A single exception handler vector should contain the address of the exception handler function. Exceptions can be:
+
+1) CPU exceptions like division by 0, access to invalid addresses, unknown instructions, etc.
+2) Software traps (executing the trap instruction)
+3) HW interrupts
+
+An interrupt, thus, is a kind of exception too. Also, the CPU core will have several "registers" mapped at the lowest addresses (below 0x1000). Here is an idea for a start:
+
+0x000:  Access here causes an exception (can help catch NULL pointer dereference)
+0x004:  (RW) Exception vector
+0x100:  (RW) Processor control register. At bit 0: GIE (Global Interrupt Enable)
+0x108:  (R)  Exception cause register (div/0, instruction, HW interrupt, etc)    
+0x10C:  (R)  Return-from-exception address
+0x120:  (RW) Individual HW interrupt enable bits
+0x124:  (R)  Individual HW pending 
+
+To simplify things:
+1) There's a single exception vector like in Nios - it determines which handler to call, judging by the source of the exception/interrupt
+2) No nested exceptions/interrupts are allowed at the CPU level. Interrupts are simply ignored when in an exception handler. Exceptions inside exception handlers cause the CPU to halt.
+
+Also, when an exception occurs, the return address (next PC) should be saved somewhere, and ERET should take it from there and continue. ERET must be a separate instruction because when it's executed the CPU will re-enable interrupts.
+
+
+----------------------------------------------------------
+01.02.2010 - Beginning full tests & Interactive simulation
+----------------------------------------------------------
+
+Today I began implementing the full tests. The idea is to have directories with several Luz assembly files (.lasm) and a driver that assembles and links them all, and runs the simulator. Some way of specifying the expected results of the simulation will be invented.
+
+The first attempts didn't work (i.e. the simulation didn't produce the desired results), so I've created two aids for debugging:
+
+1. Interactive simulation/debugging, from the command line - allowing to view the state of registers and advance the simulator.
+2. A disassembler module that translates Luz 32-bit instruction words into literal assembly instructions.
+
+
+--------------------------------------
+02.02.2010 - Writing Luz assembly code
+--------------------------------------
+
+The infrastructure for running full tests is now in place and I start writing chunks of Luz assembly (=LASM in files ending with .lasm) to test how everything works.
+
+An interesting case is function calls. The ABI will probably specify passing arguments in registers and return values as well. But I also want to try passing arguments on the stack and returning values on the stack - I want to play with the stack pointer and the frame pointer.
+
+
+------------------------------------------------------
+09.02.2010 - Implementing peripherals in the simulator
+------------------------------------------------------
+
+Writing some code for implementing peripherals in the simulator. All peripherals are memory mapped, so they can be accessed by the user via load/store instructions to the appropriate addresses. Generally, all peripherals will live below the user memory, i.e. in the address range 0x0 - 0xFFFFF. The peripherals can be registered with the simulator's memory unit, so it knows to route memory access to them.
+
+Also, peripherals each have an internal address space that starts at 0. Suppose some peripheral with 256 memory bytes is mapped to 0x2200. Then the user can access 0x2200 - 0x22FF, and this will be translated by the memory unit to accesses to this peripheral in addresses 0x0 - 0xFF. This allows several peripherals of the same type to exist, mapped to different addresses (i.e. 4 UARTs).
+
+At the moment only two peripherals are implemented: the core registers are implemented as a peripheral for convenience, and a special DebugQueue peripheral is implemented for the sake of easier debugging of code in the simulator. This peripheral exposes a single write-only word that saves words written to it to a FIFO queue that can be later accessed by the simulator.
+
+
+----------------------------------------------------
+15.02.2010 - Better debugging & complex LASM program
+----------------------------------------------------
+
+I've decided to implement a non-trivial program in LASM, this time using the usual convention of passing parameters in $a0-$a3, and returning values in $v0-$v1. The program is the prime sieve of Erastothenes for computing prime numbers. While not too complex, this program is more advanced than the other full tests so far, as it passes arrays by reference, uses the heap, multi-level loops and so on. It even includes a cute (and surely inefficient!) iterative integer square root computation procedure.
+
+Unsurprisingly, the development of this program led to some enhanced debugging needs, so I've added the following to the interactive CLI mode:
+
+* Disassembler can now print out alias names of registers (i.e. $zero instead of $r0)
+* The debugger can step over several instructions in one command
+* Added a command to print out memory contents
+* Added command-line options to the debugger for easier interaction
+
+
+-------------------------------------------
+24.02.2010 - Back to the CPU implementation
+-------------------------------------------
+
+Now that the assembler, linker & simulator are mature, it's time to get back to the implementation of the CPU. Some thoughts:
+
+1) Luz has a single memory-space, into which everything is mapped: CPU core registers, user memory (where software and user data is) and peripherals.
+2) This memory-space will be governed by a special "memory mapper" - a crossbar module that maps bus accesses to the memory and peripherals, based on the address.
+3) The memory mapper will not be configurable via registers as in MPC555, but rather will be auto-generated from a configuration by Python code - something akin to Nios. The initial version will be hand-coded in VHDL. If further customization is required, this will serve as a template for code generation.
+4) The memory mapper should probably be completely asynchronous, because we should be able to allow reading from memory in a single cycle - so it just maps the CPU's bus signals to memory and peripherals.
+5) I have to read about the wishbone bus again, because I've already forgotten what's going on there. It's crucial for a correct implementation of the memory mapper.
+
+
+------------------------------------
+28.02.2010 - More thoughts on memory
+------------------------------------
+
+(1) Memory access cycle time: changed ack_o from memory to rise after a FF on the CPU strobe, because the memory is synchronous and data isn't available immediately.
+
+(2) Mapping CPU core registers:
+The CPU core registers are a "register bank" that should be accessible through the memory mapper. It should probably be internal to the CPU to make manipulation easier. On the other hand, how will it be exposed to the memory mapper?
+
+Some considerations: the CPU module should be able to access more than one core reg in a cycle. But the memory interface should not. Therefore it makes sense to include the core registers in the CPU module, but expose them outside as a "bank" - i.e. a read/write signal, address into the bank and data in/out.
+
+Maybe some kind of generic low-level register-bank module can be used for both GPRs and core registers. I guess that the current 'registers' module is quite suitable (different instances of it can be used for GPRs and for the core regs).
+
+
+----------------------------------------------
+02.03.2010 - Memory mapping and core registers
+----------------------------------------------
+
+I've implemented the core registers as a separate module that builds upon the generic registers module. It exposes a register port interface directly to the CPU, and a standard uC bus interface (wishbone) to the memory mapper.
+
+This is a little ugly, but the alternative is placing core_regs into the CPU and then exposing its uC interface outside to the memory mapper, which is even uglier (as it causes the CPU to have two bus ports, one master and one slave).
+
+Also, I don't think now that the CPU should be able to access more than one core register at a time - who said exceptions should be completed in a single clock cycle? So I can just keep one read and one write port for core_regs and thus simplify its interface.
+
+
+--------------------------------------------------------
+03.03.2010 - Simulation memory vs. FPGA synthesis memory
+--------------------------------------------------------
+
+Since I need memory initialized from a file, I'll probably need the Altera mega-function memory (with a MIF). Therefore there are two memories: the simulation one, and the real one. The solution I see for this now is have two wrapper modules named 'user_memory' - one for simulation and one for synthesis. Simulation will include its own module (which just wires signals to an internal sim_memory module), and synthesis will have its own (which adds a WB interface on top of the Altera mega-function instance).
+
+
+--------------------------------------------
+07.03.2010 - The data path of the controller
+--------------------------------------------
+
+I've examined several options for implementing the cycles of the datapath, and it does seem that it can be very similar to DLX. Conceptually, a "cycle" is what happens between two clock ticks. In the beginning of a cycle data is available from the FFs that supply it.
+
+Instructions will be fetched when in the fetch cycle. During the fetch cycle they propagate to the memory, and on the next clock cycle the memory makes its contents at the given address available. Thus when we are entering the decoding cycle, the data is available for the decoding logic and register fetching.
+
+With this approach the fetch cycle should not wait for mem_ack, because that one will rise together with the next data and hence be only available on the next cycle. Or maybe I should make mem_ack async again? This makes sense now, because data is available from memory on the next cycle after the address is supplied.
+
+
+--------------------------------------
+09.03.2010 - Additional register ports
+--------------------------------------
+
+Contrary to other instructions which don't read Rd but only write to it, store instructions need its value too, in order to compute the store address. Branches also use Rd.
+
+This means that I have to add another read port to the registers module (to read all Rd, Rs, Rt at once, since each of them is needed as the source of at least one instruction). 
+
+Also, the current ALU interface is inconvenient. I'm changing it so that the ALU accepts the actual CPU opcodes and all the registers as well as the immediate, performing the required operations.
+
+At the moment I'll leave address computations for loads and stores out of the ALU.
+
+
+---------------------------------------------
+11.03.2010 - First signs of life from the CPU
+---------------------------------------------
+
+Today I've managed to successfully execute a small test on the controller module that runs two arithmetic instructions (SUB followed by MULU) successfully. While this is still very initial, it's an important milestone nonetheless - the instructions were executed correctly, results were written back into the relevant registers, the PC advanced as expected and the next instruction was fetched in time.
+
+The road is still long from here:
+* I have to test how loads/stores/branches work
+* Add the implementation special instructions (CALL, ERET, etc.)
+* Connect the controller to a real memory and registers module (as well as to the core registers) to see it all functioning together
+* Implement a testing framework for complete programs executing in Modelsim
+
+
+-----------------------------------------------------
+23.03.2010 - Testing framework for simulating the CPU 
+-----------------------------------------------------
+
+I think I should start with the testing framework, even before I checked that all the instructions work, and certainly before I start complicating the control path in order to implement the special instructions and access to core registers. The reasons for this are obvious - having a robust testbench I will be able to make changes freely and be sure that nothing was broken.
+
+A word about the memory image file (in Intel HEX) format required to execute a program: the loading address should be specified to be 0. That is because the memory mapper takes care of handling the prefix of the user memory, and passes only the low bits to the user memory module itself. This is how it works with all the peripherals handled by the memory mapper - to allow several peripherals of the same type to be mapped at different addresses in the CPU's memory space.
+
+
+--------------------------------
+19.05.2010 - Porting to Python 3
+--------------------------------
+
+Modified the source to run on both Python 2.6 and Python 3.1
+
+
+
+
+
+

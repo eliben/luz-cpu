@@ -1,0 +1,26 @@
+# computes the sum of an array
+#
+    .segment data
+len:
+    .byte 16
+array:
+    .byte 0x5, 0x9, 0x8, 0x45, 0x46, 0x47
+    .byte 0x1, 0x1, 0x3, 0x11, 0x22, 0xFF
+
+    .segment code
+    .global asm_main
+asm_main:
+    li $r9, len
+    lw $r5, 0($r9)          # array length
+    li $r6, array           # r6: points to the array
+    add $r5, $r6, $r5       # r5: one past the end of the array
+    move $r8, $zero         # r8: the sum
+
+addloop:
+    lbu $r7, 0($r6)         # r7: current array element
+    add $r8, $r8, $r7       # accumulate
+    addi $r6, $r6, 1        # advance array pointer
+    bltu $r6, $r5, addloop  # end reached?
+
+    halt
+

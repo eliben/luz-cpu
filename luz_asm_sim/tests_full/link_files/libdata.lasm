@@ -1,0 +1,9 @@
+# Holds some data with a label that can be accessed 
+# externally
+
+    .segment data
+    .global mydata1
+mydata1:
+    .byte 0x15, 0x16, 0x20, 0xAF
+
+

@@ -1,0 +1,82 @@
+set PrefSource(font) {{Courier New} 10 roman normal}
+set NumericStdNoWarnings 1
+set StdArithNoWarnings  1
+destroy .wave
+onerror {resume}
+restart -f -nowave
+
+add wave -noupdate -color "Pink" -format Logic /clk
+add wave -noupdate -color "Yellow" -format Logic /reset_n
+add wave -noupdate -format Logic /mem_read
+add wave -noupdate -format Logic /mem_write
+add wave -noupdate -format Literal -radix hex /mem_bytesel
+add wave -noupdate -format Literal -radix hex /mem_addr
+add wave -noupdate -format Literal -radix hex /mem_data_out
+add wave -noupdate -format Logic /mem_ack
+add wave -noupdate -format Literal -radix hex /mem_data_in
+add wave -noupdate -format Literal -radix hex /reg_sel_a
+add wave -noupdate -format Literal -radix hex /reg_a_out
+add wave -noupdate -format Literal -radix hex /reg_sel_b
+add wave -noupdate -format Literal -radix hex /reg_b_out
+add wave -noupdate -format Literal -radix hex /reg_sel_y
+add wave -noupdate -format Logic /reg_write_y
+add wave -noupdate -format Literal -radix hex /reg_y_in
+add wave -noupdate -format Literal -radix hex /reg_sel_z
+add wave -noupdate -format Logic /reg_write_z
+add wave -noupdate -format Literal -radix hex /reg_z_in
+add wave -noupdate -format Logic /alu_op
+add wave -noupdate -format Literal -radix hex /alu_rs_in
+add wave -noupdate -format Literal -radix hex /alu_rt_in
+add wave -noupdate -format Literal -radix hex /alu_rd_in
+add wave -noupdate -format Literal -radix hex /alu_imm_in
+add wave -noupdate -format Literal -radix hex /alu_output_a
+add wave -noupdate -format Literal -radix hex /alu_output_b
+add wave -noupdate -format Literal -radix hex /pc_in
+add wave -noupdate -format Logic /pc_write
+add wave -noupdate -format Literal -radix hex /pc_out
+add wave -noupdate -format Logic /dummy
+
+add wave -DIVIDER dut_signals
+add wave -noupdate -format Logic /dut/cycle
+add wave -noupdate -format Literal -radix hex /dut/IR_ff
+add wave -noupdate -format Literal -radix hex /dut/OP_ff
+add wave -noupdate -format Literal -radix hex /dut/PC_ff
+add wave -noupdate -format Literal -radix hex /dut/NPC_ff
+add wave -noupdate -format Literal -radix hex /dut/Rs_ff
+add wave -noupdate -format Literal -radix hex /dut/Rt_ff
+add wave -noupdate -format Literal -radix hex /dut/Rd_ff
+add wave -noupdate -format Literal -radix hex /dut/Imm_unsigned_ff
+add wave -noupdate -format Literal -radix hex /dut/Imm_signed_ff
+add wave -noupdate -format Literal -radix hex /dut/ALU_out_a_ff
+add wave -noupdate -format Literal -radix hex /dut/ALU_out_b_ff
+add wave -noupdate -format Literal -radix hex /dut/LMD_ff
+add wave -noupdate -format Literal -radix hex /dut/load_addr_ff
+add wave -noupdate -format Literal -radix hex /dut/store_addr_ff
+add wave -noupdate -format Literal -radix hex /dut/branch_addr_ff
+
+
+if {$argc == 1} {
+    run $1
+} else {
+    if {[find sig test_num] != ""} {
+        while {[examine test_num] != 999999} {
+            run 1 ms
+        }
+    } else {
+        run 1 ms
+    }
+}
+
+WaveRestoreZoom {0 ns} {2001 ns}
+WaveRestoreCursors {0 ns}
+view -undock wave
+
+TreeUpdate [SetDefaultTree]
+configure wave -namecolwidth 250
+configure wave -valuecolwidth 150
+configure wave -justifyvalue left
+configure wave -signalnamewidth 2          
+configure wave -snapdistance 10
+configure wave -datasetprefix 0
+configure wave -rowmargin 4
+configure wave -childrowmargin 2

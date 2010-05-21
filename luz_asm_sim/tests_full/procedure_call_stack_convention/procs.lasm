@@ -1,0 +1,86 @@
+# Procedures for computing scalar product of two arrays of words.
+# Accept parameters and return values on the stack (even if this
+# isn't how the compiler would generate this code), just to see
+# how these things work.
+#
+    .segment code
+    .global nummult
+    .global scalarproduct
+
+    # Main procedure. 
+    # Given 3 arguments on stack: address of array1, address of 
+    # array2 and length.
+    # Returns (on stack) the scalar product of the arrays
+    #
+scalarproduct:
+    subi $sp, $sp, 4        # save $fp on stack
+    sw $fp, 0($sp)
+    move $fp, $sp           # $fp points to the frame
+    
+    # save some registers on the stack
+    subi $sp, $sp, 24
+    sw $s0, -4($fp)
+    sw $s1, -8($fp)
+    sw $s2, -12($fp)
+    sw $s3, -16($fp)
+    sw $s4, -20($fp)
+    sw $ra, -24($fp)
+    
+    lw $s0, 12($fp)         # s0: address of array1
+    lw $s1, 8($fp)          # s1: address of array2
+    lw $s2, 4($fp)          # s2: length of arrays
+    move $s3, $zero         # s3: running sum
+    
+addloop:
+    subi $sp, $sp, 8        # push arguments on stack
+    lw $s4, 0($s0)          # next element of array1
+    sw $s4, 4($sp)
+    lw $s4, 0($s1)          # next element of array2
+    sw $s4, 0($sp)
+    
+    call nummult            # call the procedure
+    lw $s4, 0($sp)          # grab return value
+    add $s3, $s3, $s4       # accumulate
+    addi $sp, $sp, 12       # clean stack
+    
+    addi $s0, $s0, 4        # advance array pointers
+    addi $s1, $s1, 4
+    subi $s2, $s2, 1        # one less element to add
+    bnez $s2, addloop       # if not over - loop back 
+    
+    lw $ra, -24($fp)        # restore return address
+    addi $sp, $sp, 24       # clear stack of saved registers
+    lw $fp, 0($sp)          # restore fp
+    addi $sp, $sp, 4
+    
+    subi $sp, $sp, 4        # push return value onto stack
+    sw $s3, 0($sp)          # ... and return
+    ret
+
+
+    # This procedure multiplies two numbers given as arguments
+    # on the stack and returns their product.
+    #
+nummult:
+    subi $sp, $sp, 4        # save $fp on stack
+    sw $fp, 0($sp)
+    move $fp, $sp           # $fp points to the frame
+    lw $r8, 4($fp)          # r8: first argument
+    lw $r9, 8($fp)          # r9: second argument
+    mulu $r10, $r8, $r9     # do the multiplication
+    
+    # pop $fp from stack
+    lw $fp, 0($sp)          
+    addi $sp, $sp, 4        
+    
+    # push return value onto stack
+    # this loops superfluous after the previous commands, but I'm
+    # just writing this to simulate unoptimized compiler-generated
+    # code
+    #
+    subi $sp, $sp, 4
+    sw $r10, 0($sp)
+    
+    ret
+
+

@@ -1,0 +1,8 @@
+# A basic test just to see everything works
+
+    .segment code
+    .global asm_main
+asm_main:
+    addi $r5, $zero, 0x45
+    halt
+

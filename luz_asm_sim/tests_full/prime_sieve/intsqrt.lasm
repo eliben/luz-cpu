@@ -1,0 +1,93 @@
+# Exports a procedure that computes the integer floor(sqrt(num))
+# using a simple iterative algorithm.
+# Make sure 0 < num < 2**31 for this to work correctly.
+#
+
+    .segment code
+    .global intsqrt
+
+# Iterative halving to find a square root of a number passed in 
+# $a0. Returns the root in $v0.
+#
+# Follows the following algorithm (Python (pseudo)code):
+#
+# def findsqrt(num):
+#    a, b = 1, num
+#    c = a
+#    
+#    while True:
+#        new_c = (a + b) / 2
+#        if c == new_c:
+#            break
+#        else:
+#            c = new_c
+#            
+#        if c*c == num:
+#            break
+#        elif c*c > num:
+#            b = c
+#        else: # c * c < num:
+#            a = c
+#    
+#    return c
+#
+intsqrt:
+    subi $sp, $sp, 4        # save $fp on stack
+    sw $fp, 0($sp)
+    move $fp, $sp           # $fp points to the frame
+    
+    # save registers on the stack
+    subi $sp, $sp, 24
+    sw $s0, -4($fp)
+    sw $s1, -8($fp)
+    sw $s2, -12($fp)
+    sw $s3, -16($fp)
+    sw $s4, -20($fp)
+    sw $s5, -24($fp)
+    
+    # Initialization
+    #
+    # $s0 is a, $s1 is b, $s2 is $c
+    #
+    ori $s0, $zero, 1
+    move $s1, $a0
+    move $s2, $s0
+    
+    # $s3 is new_c
+    # $s4, $s5 is c*c
+    #
+theloop:
+    add $s3, $s0, $s1       # new_c = (a + b) / 2
+    srli $s3, $s3, 1
+    
+    beq $s2, $s3, endloop   # if c == new_c end loop
+    move $s2, $s3           # otherwise, c = new_c and go on
+    
+    mulu $s4, $s2, $s2      # s4 is c*c
+    
+    bgtu $s5, $zero, too_high   # if c*c > num, too high
+    bgtu $s4, $a0, too_high  
+    bltu $s4, $a0, too_low      # if c*c < num, too low
+    b endloop                   # otherwise, end loop
+
+too_high:
+    move $s1, $s2           # b = c
+    b theloop
+too_low:
+    move $s0, $s2           # a = c
+    b theloop
+
+endloop:
+    move $v0, $s2           # returned value
+    
+    lw $s0, -4($fp)         # epilogue 
+    lw $s1, -8($fp)
+    lw $s2, -12($fp)
+    lw $s3, -16($fp)
+    lw $s4, -20($fp)
+    lw $s5, -24($fp)
+    addi $sp, $sp, 24
+    lw $fp, 0($sp)
+    addi $sp, $sp, 4
+    ret
+

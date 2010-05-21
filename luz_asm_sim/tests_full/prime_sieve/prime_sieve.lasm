@@ -1,0 +1,142 @@
+# Exports a procedure that finds primes smaller than a given 
+# number.
+#
+
+    .segment code
+    .global prime_sieve
+
+# Follows this algorithm:
+#
+# def prime_sieve(upto_num, arr, maxprimes):
+#    sieve = [True] * upto_num
+#    
+#    run_upto = int(math.sqrt(upto_num) + 1)
+#    for s in xrange(2, run_upto + 1):
+#        i = s + s
+#        while i < upto_num:
+#            sieve[i] = False
+#            i += s
+#    
+#    nprimes = 0
+#    for i, isprime in enumerate(sieve):
+#        if isprime and i >= 2:
+#            arr.append(i)
+#        
+#            nprimes += 1
+#            if nprimes >= maxprimes:
+#                break
+#
+#    return nprimes
+#
+# -----------
+#
+# upto_num: is passed in $a0
+# arr: 
+#   address of array (of words) to write the results to is 
+#   passed in $a1
+# maxprimes:
+#   maximal amount of words to write to arr is passed in $a2
+#
+# Returns: 
+#
+# nprimes: 
+#   The amount of primes written into the array, in $v0
+#
+# Uses the heap for temporary storage.
+#
+
+prime_sieve:
+    subi $sp, $sp, 4        # save $fp on stack
+    sw $fp, 0($sp)
+    move $fp, $sp           # $fp points to the frame
+    
+    # save registers on the stack
+    subi $sp, $sp, 24
+    sw $s0, -4($fp)
+    sw $s1, -8($fp)
+    sw $s2, -12($fp)
+    sw $a0, -16($fp)
+    sw $ra, -20($fp)
+    sw $s3, -24($fp)
+    
+    # We're not doing a proper heap allocation, but just using 
+    # the memory space starting at __heap to store the sieve
+    # array.
+    #
+    li $s0, __heap          # s0 points to the sieve array
+    move $t1, $zero
+    ori $t3, $zero, 1       # t3 = 1
+    
+init_sieve_loop:
+    add $t2, $t1, $s0       # t2 points to the next byte in sieve
+    sb $t3, 0($t2)          # sieve[i] = 1
+    addi $t1, $t1, 1        # t1++
+    bltu $t1, $a0, init_sieve_loop
+
+    # Call intsqrt to compute run_upto, which is in $s1
+    # $a0 already contains upto_num
+    #
+    call intsqrt
+    addi $s1, $v0, 1        # run_upto = intsqrt(upto_num) + 1
+    
+    addi $s2, $zero, 2      # s = 2
+sloop:
+    add $s3, $s2, $s2       # i = s + s
+iloop:
+    add $t2, $s3, $s0       # t2 points to sieve[i]
+    sb $zero, 0($t2)        # sieve[i] = 0
+    add $s3, $s3, $s2       # i += s
+    bltu $s3, $a0, iloop    # if i < upto_num, loop back
+    
+    addi $s2, $s2, 1        # s++
+    bleu $s2, $s1, sloop    # if s <= run_upto, loop back
+    
+    # Now the sieve array contains information about the numbers
+    # and we can start the output code.
+    #
+    move $t9, $a1           # t9 <- address of output array
+    move $t8, $zero         # nprimes
+    
+    addi $s3, $zero, 2      # i = 2
+output_loop:
+    add $t2, $s3, $s0       # t2 points to sieve[i]
+    lb $t3, 0($t2)          # t3 = sieve[i]
+    beqz $t3, i_not_prime   # if sieve[i] == 0, i isn't a prime
+    
+    # if we're here, i is prime, so we store it into the output 
+    # array
+    #
+    slli $t7, $t8, 2        # t7 = t8 * 4
+    add $t7, $t7, $t9       # t7 points to output arr[nprimes]
+    sw $s3, 0($t7)
+    addi $t8, $t8, 1        # nprimes++
+    
+    bgeu $t8, $a2, end_loop # if nprimes >= maxprimes, end loop
+    
+i_not_prime:
+    addi $s3, $s3, 1        # i++
+    bltu $s3, $a0, output_loop  # if i < upto_num, loop back
+    
+    li $k1, 0xBEEF0
+    sw $k1, 0($k0)
+    sw $s3, 0($k0)
+    sw $a0, 0($k0)
+
+end_loop:
+    # finally, we return nprimes
+    move $v0, $t8
+    
+    # epilogue
+    lw $s0, -4($fp)
+    lw $s1, -8($fp)
+    lw $s2, -12($fp)
+    lw $a0, -16($fp)
+    lw $ra, -20($fp)
+    lw $s3, -24($fp)
+    addi $sp, $sp, 24
+    
+    lw $fp, 0($sp)
+    addi $sp, $sp, 4
+
+    ret
+

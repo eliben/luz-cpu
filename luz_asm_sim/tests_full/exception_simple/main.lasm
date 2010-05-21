@@ -1,0 +1,49 @@
+# Simple exception handling:
+#
+# * sets up an exception vector
+# * causes an exception
+# * makes sure the exception handler ran as expected
+# * continues execution after the exception
+#
+    .segment code
+    
+    #
+    # Definitions internal to the LUZ CPU
+    #
+    .define LUZ_EXCEPTION_VECTOR, 0x004
+    .define LUZ_CONTROL_1, 0x100
+    .define LUZ_EXCEPTION_CAUSE, 0x108
+    .define LUZ_EXCEPTION_RETURN_ADDR, 0x10C
+    .define ADDR_DEBUG_QUEUE, 0xF0000
+    
+    .global asm_main
+
+asm_main:
+    
+    # Write something into the debug queue
+    #
+    li $s2, ADDR_DEBUG_QUEUE
+    ori $s3, $zero, 0xABBA
+    sw $s3, 0($s2)              # DEBUG
+    
+    # Set-up exception handler
+    #
+    li $s4, ex_handler
+    sw $s4, LUZ_EXCEPTION_VECTOR($zero)
+    
+    ori $s3, $zero, 0xBEEF
+    sw $s3, 0($s2)              # DEBUG
+    
+    lw $t0, 5($zero)            # align exception
+
+    ori $s3, $zero, 0x44
+    sw $s3, 0($s2)
+    
+    nop
+    halt
+
+ex_handler:
+    lw $t1, LUZ_EXCEPTION_CAUSE($zero)
+    sw $t1, 0($s2)              # DEBUG
+    eret
+
