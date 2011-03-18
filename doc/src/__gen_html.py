@@ -5,7 +5,7 @@ FILES = [
     'getting_started.txt',
 ]
 
-RST_EXE = 'rst2html' if sys.platform == 'win32' else 'rst2html.py'
+RST_EXE = 'rst2html'
 
 
 for txtfile in FILES:

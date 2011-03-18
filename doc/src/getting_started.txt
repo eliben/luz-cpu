@@ -28,7 +28,7 @@ In the future, Luz will also feature a complete synthesizable VHDL implementatio
 License
 -------
 
-Unless otherwise specified, Luz is licensed with the GNU LGPL license. A copy of the license is available in the ``doc`` directory, or on GNU's website.
+The code of Luz is in the public domain. For more information, see the UNLICENSE file in the ``doc`` directory.
 
 What is Luz useful for?
 -----------------------

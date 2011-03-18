@@ -93,7 +93,7 @@ small and consist of a small amount of records.
 ==================================================
 
 Copyright (C) 2008, Eli Bendersky (http://eli.thegreenplace.net)
-License: LGPL
+License: This code is in the public domain
 """
 from binascii import hexlify, unhexlify
 from itertools import islice
