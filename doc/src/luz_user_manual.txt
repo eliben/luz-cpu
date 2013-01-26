@@ -287,7 +287,7 @@ Pseudo-instruction, translated to::
 Pseudo-instruction, translated to::
 
     LUI Rd, const32[31:16]
-    ORI Rd, R0, const32[15:0]
+    ORI Rd, Rd, const32[15:0]
 
 ``MOVE`` - move data between registers (*)
 ==========================================

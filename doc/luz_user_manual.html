@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
+<meta name="generator" content="Docutils 0.8.1: http://docutils.sourceforge.net/" />
 <title>Luz user's manual</title>
 <meta name="author" content="Eli Bendersky" />
 <meta name="date" content="23-Apr-2010" />
@@ -11,7 +11,7 @@
 
 /*
 :Author: David Goodger (goodger@python.org)
-:Id: $Id: html4css1.css 5951 2009-05-18 18:03:10Z milde $
+:Id: $Id: html4css1.css 7056 2011-06-17 10:50:48Z milde $
 :Copyright: This stylesheet has been placed in the public domain.
 
 Default cascading style sheet for the HTML output of Docutils.
@@ -48,6 +48,10 @@ blockquote.epigraph {
 
 dl.docutils dd {
   margin-bottom: 0.5em }
+
+object[type="image/svg+xml"], object[type="application/x-shockwave-flash"] {
+  overflow: hidden;
+}
 
 /* Uncomment (and remove this text!) to get bold-faced definition list terms
 dl.docutils dt {
@@ -159,15 +163,21 @@ h2.subtitle {
 hr.docutils {
   width: 75% }
 
-img.align-left, .figure.align-left{
+img.align-left, .figure.align-left, object.align-left {
   clear: left ;
   float: left ;
   margin-right: 1em }
 
-img.align-right, .figure.align-right {
+img.align-right, .figure.align-right, object.align-right {
   clear: right ;
   float: right ;
   margin-left: 1em }
+
+img.align-center, .figure.align-center, object.align-center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
 
 .align-left {
   text-align: left }
@@ -181,7 +191,7 @@ img.align-right, .figure.align-right {
 
 /* reset inner alignment in figures */
 div.align-right {
-  text-align: left }
+  text-align: inherit }
 
 /* div.align-center * { */
 /*   text-align: left } */
@@ -241,7 +251,7 @@ pre.address {
   margin-top: 0 ;
   font: inherit }
 
-pre.literal-block, pre.doctest-block {
+pre.literal-block, pre.doctest-block, pre.math {
   margin-left: 2em ;
   margin-right: 2em }
 
@@ -401,7 +411,7 @@ ul.auto-toc {
 <div class="section" id="the-luz-suite">
 <h2><a class="toc-backref" href="#id3">1.1&nbsp;&nbsp;&nbsp;The Luz suite</a></h2>
 <p>Luz is an open-source CPU suite. Designing and implementing a CPU is not enough - one should have tools to program it. Since no one is willing to bang binary machine code by hand, the lowest tool required to program a CPU is some sort of an assembly language. Luz defines such an assembly language - LASM (Luz Assembly), and comes with a fully functional assembler that compiles assembly source code into an object file. However, for writing non-trivial programs this also isn't enough. Programs frequently consist of several assembly files, together will additional code packaged in libraries and provided by the system or 3rd parties. Therefore, a linker is required to collect all the object files together into an executable. This is why Luz also comes with a linker. The full suite, therefore, can be described by the following diagram:</p>
-<div align="center" class="align-center"><img alt="diagrams/luz_proj_toplevel.png" class="align-center" src="diagrams/luz_proj_toplevel.png" /></div>
+<img alt="diagrams/luz_proj_toplevel.png" class="align-center" src="diagrams/luz_proj_toplevel.png" />
 <p>But wait, aren't programs written in high-level languages these days? Yes, sure, and the Luz suite includes all the support required to program it in a higher-level language. All that's lacking is a compiler from C to LASM. Since Luz has a functional assembler and linker, it can readily support compilation from C. And C can be used to implement everything else. At the moment there's no C compiler for Luz, however, so LASM will have to do.</p>
 </div>
 </div>
@@ -625,7 +635,7 @@ ORI Rd, R0, const16
 <p>Pseudo-instruction, translated to:</p>
 <pre class="literal-block">
 LUI Rd, const32[31:16]
-ORI Rd, R0, const32[15:0]
+ORI Rd, Rd, const32[15:0]
 </pre>
 </div>
 <div class="section" id="move-move-data-between-registers">
