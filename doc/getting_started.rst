@@ -1,11 +1,3 @@
-==========================
- Getting started with Luz
-==========================
-
-:Author: Eli Bendersky
-:Contact: eliben@gmail.com
-:Date: 27-Apr-2010
-
 .. contents:: Table of Contents
 .. sectnum::
 
@@ -13,7 +5,7 @@
 Introduction
 ************
 
-This document will help you get started using / hacking on Luz. It doesn't explain Luz in any depth - read ``doc/luz_user_manual.html`` for that.
+This document will help you get started using / hacking on Luz. It doesn't explain Luz in any depth - read `the user manual <https://github.com/eliben/luz-cpu/blob/master/doc/luz_user_manual.rst>`_ for that.
 
 What is Luz?
 ------------
@@ -28,7 +20,7 @@ In the future, Luz will also feature a complete synthesizable VHDL implementatio
 License
 -------
 
-The code of Luz is in the public domain. For more information, see the UNLICENSE file in the ``doc`` directory.
+The code of Luz is in the public domain. For more information, see the COPYING file in the main directory.
 
 What is Luz useful for?
 -----------------------
@@ -43,9 +35,7 @@ Getting started with Luz
 Documentation
 -------------
 
-The Luz documentation is collected in the ``doc`` directory. It's written in plain text files, in reStructuredText format, and is converted to HTML with the ``doc/src/__gen_html.py`` script.
-
-First and foremost, you must get familiar with Luz by reading its user's manual (``doc/luz_asm_manual.html``). This document assumes some knowledge of computer architecture, assembly language and programming. 
+The Luz documentation is collected in the ``doc`` directory.
 
 Dependencies
 ------------
@@ -54,8 +44,6 @@ Luz is implemented in pure Python. To run it, you need to have a couple of thing
 
 * Python version 2.6 or 3.1 
 * The PLY Python library, which you can obtain from its website (google it). Luz works with all recent versions of PLY
-
-I'm developing Luz mainly on Windows and Linux, but any other platform where you can install Python and PLY should be fine.
 
 Structure of the source tree
 ----------------------------
@@ -131,6 +119,3 @@ What's next?
 ------------
 
 What's next depends on what you want to do with Luz. If you want to practice some assembly programming, just write LASM code, consulting the user's manual. If you want to hack on Luz, study the code (a developer's guide is planned for the near future...)
-
-
-
