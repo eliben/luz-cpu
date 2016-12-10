@@ -1,10 +1,10 @@
 # Runner of full tests of the Luz assembler, linker & simulator.
-# Full tests consist of a directory with some .lasm files and 
+# Full tests consist of a directory with some .lasm files and
 # a single _test.py file
 # The .lasm files are assembled, linked and simulated. When the
 # simulation finishes (on CPU halt), the Python test functions in
-# _test.py are executed with the simulator object to check 
-# expected results. 
+# _test.py are executed with the simulator object to check
+# expected results.
 #
 # Eli Bendersky (C) 2008-2010
 #
@@ -26,10 +26,10 @@ def run_test_dir(dirpath):
     """
     testfile = None
     asmfiles = []
-    
+
     for file in os.listdir(dirpath):
         path = os.path.join(dirpath, file)
-        
+
         if file == '_test.py':
             testfile = path
         elif os.path.splitext(path)[1] == '.lasm':
@@ -43,15 +43,13 @@ def run_test_dir(dirpath):
     # Simulate
     sim = LuzSim(img)
     sim.run()
-    
+
     # Run all the test functions for this test and make sure
     # they pass
-    #
     for testfunc in get_test_functions(testfile):
         if not testfunc(sim):
             raise FullTestError('failed %s in %s' % (
                     testfunc.__name__, dirpath))
-
     return 'OK'
 
 
@@ -65,7 +63,7 @@ def run_all(startdir='.'):
         except Exception:
             printme('Caught exception for dir: %s\n' % subdir)
             raise
-    
+
     printme('------------------------------------------------------\n')
     printme('Elapsed: %.3fs\n' % (time.time() - t1))
 
@@ -73,6 +71,3 @@ def run_all(startdir='.'):
 #-----------------------------------------------------------------
 if __name__ == '__main__':
     run_all('.')
-    
-
-
