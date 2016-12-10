@@ -2,13 +2,8 @@
  Luz user's manual
 ===================
 
-:Author: Eli Bendersky
-:Contact: eliben@gmail.com
-:Date: 23-Apr-2010
-
-.. contents:: Table of Contents
+.. contents::
 .. sectnum::
-
 
 Introduction
 ************
