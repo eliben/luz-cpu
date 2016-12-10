@@ -1,7 +1,7 @@
 Documentation is in the doc/ directory in the source.
-Start with ``doc/getting_started.html``.
+Start with `the getting started guide <https://github.com/eliben/luz-cpu/blob/master/doc/getting_started.rst>`_.
 
 The following diagram describes Luz:
 
-.. image:: https://raw.github.com/eliben/luz-cpu/master/doc/diagrams/luz_proj_toplevel.png
+.. image:: https://raw.github.com/eliben/luz-cpu/master/doc/luz_proj_toplevel.png
   :align: center

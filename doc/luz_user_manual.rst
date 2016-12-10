@@ -18,7 +18,7 @@ The Luz suite
 
 Luz is an open-source CPU suite. Designing and implementing a CPU is not enough - one should have tools to program it. Since no one is willing to bang binary machine code by hand, the lowest tool required to program a CPU is some sort of an assembly language. Luz defines such an assembly language - LASM (Luz Assembly), and comes with a fully functional assembler that compiles assembly source code into an object file. However, for writing non-trivial programs this also isn't enough. Programs frequently consist of several assembly files, together will additional code packaged in libraries and provided by the system or 3rd parties. Therefore, a linker is required to collect all the object files together into an executable. This is why Luz also comes with a linker. The full suite, therefore, can be described by the following diagram:
 
-.. image:: diagrams/luz_proj_toplevel.png
+.. image:: https://raw.github.com/eliben/luz-cpu/master/doc/luz_proj_toplevel.png
   :align: center
 
 But wait, aren't programs written in high-level languages these days? Yes, sure, and the Luz suite includes all the support required to program it in a higher-level language. All that's lacking is a compiler from C to LASM. Since Luz has a functional assembler and linker, it can readily support compilation from C. And C can be used to implement everything else. At the moment there's no C compiler for Luz, however, so LASM will have to do.
