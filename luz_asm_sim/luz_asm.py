@@ -3,7 +3,6 @@
 #
 # Luz micro-controller assembler
 # Eli Bendersky (C) 2008-2010
-#
 from optparse import OptionParser
 import glob, operator
 
@@ -22,29 +21,25 @@ def run(cmdline_args):
         action='store',
         default='default',
         help='Upper Linear Base Address for output HEX file')
-    
+
     if len(cmdline_args) == 0:
         optparser.print_help()
         return
-    
-    options, args = optparser.parse_args(cmdline_args)    
-    out_filename = options.output or 'image.hex'    
+
+    options, args = optparser.parse_args(cmdline_args)
+    out_filename = options.output or 'image.hex'
     in_filenames = reduce(operator.add, [glob.glob(pat) for pat in args], [])
-    
+
     if options.ulba == 'default':
         ulba = 0
     else:
         ulba = int(options.ulba, 16)
-    
+
     assemble_binary(in_filenames, out_filename, ulba)
-    
+
     printme('Created output file: %s...' % out_filename)
 
 
 if __name__ == '__main__':
     import sys
     run(sys.argv[1:])
-
-
-
-
