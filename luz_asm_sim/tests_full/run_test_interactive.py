@@ -11,9 +11,7 @@ from lib.commonlib.portability import printme
 from lib.simlib.luzsim import LuzSim
 from lib.simlib.interactive_cli import interactive_cli_sim
 
-
 # Setup options
-#
 optparser = optparse.OptionParser(
     usage='usage: %prog [options] <testname>')
 optparser.add_option('-i', '--interactive', dest='interactive',
@@ -22,7 +20,6 @@ optparser.add_option('-i', '--interactive', dest='interactive',
 optparser.set_defaults(interactive=False)
 
 # Parse command-line arguments. 'args' should be a single test name
-#
 (options, args) = optparser.parse_args()
 
 if len(args) < 1:

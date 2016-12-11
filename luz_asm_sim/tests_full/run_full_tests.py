@@ -7,12 +7,10 @@
 # expected results.
 #
 # Eli Bendersky (C) 2008-2010
-#
 import sys, os, time
-sys.path.insert(0, '..')
 
 from lib.simlib.luzsim import LuzSim
-from lib.commonlib.utils import (extract_bitfield,)
+from lib.commonlib.utils import extract_bitfield
 from lib.commonlib.portability import printme
 
 from testrun_utils import (
@@ -70,4 +68,7 @@ def run_all(startdir='.'):
 
 #-----------------------------------------------------------------
 if __name__ == '__main__':
-    run_all('.')
+    startdir = '.'
+    if len(sys.argv) > 1:
+        startdir = sys.argv[1]
+    run_all(startdir)
