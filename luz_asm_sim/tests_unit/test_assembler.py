@@ -314,7 +314,7 @@ class TestAssemblerErrors(unittest.TestCase):
         return self.asm.assemble(txt)
 
     def assert_str_contains(self, str, what):
-        self.failUnless(str.find(what) > -1, '"%s" contains "%s"' % (str, what))
+        self.assertTrue(str.find(what) > -1, '"%s" contains "%s"' % (str, what))
 
     def assert_error_at_line(self, msg, lineno):
         self.assert_str_contains(msg, 'lineno %s' % lineno)

@@ -42,7 +42,7 @@ Dependencies
 
 Luz is implemented in pure Python. To run it, you need to have a couple of things installed:
 
-* Python version 2.6 or 3.1 
+* Python version 2.7 or 3.2+ 
 * The PLY Python library, which you can obtain from its website (google it). Luz works with all recent versions of PLY
 
 Structure of the source tree

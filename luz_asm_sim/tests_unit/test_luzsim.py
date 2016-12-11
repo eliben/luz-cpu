@@ -445,7 +445,7 @@ class TestLuzSim_exceptions(TestLuzSimBase):
         ls.step() # 'li' is 2 instructions
         ls.step() # hits exception
 
-        self.assert_(ls.in_exception)
+        self.assertTrue(ls.in_exception)
         self.assertEqual(ls.pc, 0)
         self.assertEqual(ls.cregs.exception_cause.value,
             exception_cause_code[ExceptionCause.MEMORY_ACCESS])
@@ -456,7 +456,7 @@ class TestLuzSim_exceptions(TestLuzSimBase):
         img = list(inv) + [0, 0, 0, 0]
         ls = LuzSim(img)
         ls.step()
-        self.assert_(ls.in_exception)
+        self.assertTrue(ls.in_exception)
         self.assertEqual(ls.pc, 0)
         self.assertEqual(ls.cregs.exception_cause.value,
             exception_cause_code[ExceptionCause.INVALID_OPCODE])
@@ -487,7 +487,7 @@ class TestLuzSim_exceptions(TestLuzSimBase):
         ls.step(); ls.step()    # sw, nop
         ls.step()               # here an exception happens
 
-        self.assert_(ls.in_exception)
+        self.assertTrue(ls.in_exception)
         # PC points correctly
         self.assertEqual(ls.pc, USER_MEMORY_START + 4)
         # return address from exception points correctly
@@ -498,7 +498,7 @@ class TestLuzSim_exceptions(TestLuzSimBase):
         ls.step(); ls.step();
 
         # out of exception, and the pc is correct
-        self.assert_(not ls.in_exception)
+        self.assertFalse(ls.in_exception)
         self.assertEqual(ls.pc, USER_MEMORY_START + 0x20)
 
         # and the register addition in the vector code did run
@@ -530,7 +530,7 @@ class TestLuzSim_exceptions(TestLuzSimBase):
         ls.step(); ls.step()    # sw, nop
         ls.step()               # here an exception happens
 
-        self.assert_(ls.in_exception)
+        self.assertTrue(ls.in_exception)
         # PC points correctly
         self.assertEqual(ls.pc, USER_MEMORY_START + 4)
 
@@ -538,7 +538,7 @@ class TestLuzSim_exceptions(TestLuzSimBase):
         ls.step()
 
         # the CPU halts
-        self.assert_(ls.halted)
+        self.assertTrue(ls.halted)
 
 
 class TestMemoryUnit(TestLuzSimBase):

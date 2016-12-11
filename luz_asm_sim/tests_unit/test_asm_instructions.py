@@ -20,15 +20,15 @@ class TestPrimitives(unittest.TestCase):
         self.assertRaises(InstructionError, callable, *args, **kwargs)
 
     def test_signed_fits_in_nbits(self):
-        self.failUnless(num_fits_in_nbits(7, 4, signed=True))
-        self.failUnless(not num_fits_in_nbits(8, 4, signed=True))
-        self.failUnless(num_fits_in_nbits(-8, 4, signed=True))
-        self.failUnless(not num_fits_in_nbits(-9, 4, signed=True))
+        self.assertTrue(num_fits_in_nbits(7, 4, signed=True))
+        self.assertTrue(not num_fits_in_nbits(8, 4, signed=True))
+        self.assertTrue(num_fits_in_nbits(-8, 4, signed=True))
+        self.assertTrue(not num_fits_in_nbits(-9, 4, signed=True))
 
     def test_unsigned_fits_in_nbits(self):
-        self.failUnless(num_fits_in_nbits(15, 4))
-        self.failUnless(not num_fits_in_nbits(16, 4))
-        self.failUnless(not num_fits_in_nbits(-1, 4))
+        self.assertTrue(num_fits_in_nbits(15, 4))
+        self.assertTrue(not num_fits_in_nbits(16, 4))
+        self.assertTrue(not num_fits_in_nbits(-1, 4))
 
     def test_reg(self):
         self.assertEqual(_reg(Id('$r5')), 5)

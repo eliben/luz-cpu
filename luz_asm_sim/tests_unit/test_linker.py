@@ -422,7 +422,7 @@ class TestLinkerErrors(unittest.TestCase):
         return self.linker.link(object_files)
 
     def assert_str_contains(self, str, what):
-        self.failUnless(str.find(what) > -1, '"%s" contains "%s"' % (str, what))
+        self.assertTrue(str.find(what) > -1, '"%s" contains "%s"' % (str, what))
 
     def assert_linker_error(self, objs, msg):
         try:
