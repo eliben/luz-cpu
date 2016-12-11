@@ -1,7 +1,6 @@
 import os, sys, unittest
 sys.path.insert(0, '..')
 
-import setup_path
 from lib.asmlib.disassembler import *
 from lib.commonlib.utils import *
 from lib.commonlib.luz_opcodes import *
@@ -10,7 +9,7 @@ from lib.commonlib.luz_opcodes import *
 class TestDisassembler(unittest.TestCase):
     def assertDisassemble(self, op, str, replace_alias=False):
         self.assertEqual(disassemble(op, replace_alias), str)
-    
+
     def test_3reg(self):
         op = (  build_bitfield(31, 26, OP_ADD) |
                 build_bitfield(25, 21, 5) |
@@ -39,7 +38,7 @@ class TestDisassembler(unittest.TestCase):
                 build_bitfield(20, 16, 22) |
                 build_bitfield(15, 0, 0x0020))
         self.assertDisassemble(op, 'lb $r2, 32($r22)')
-    
+
         op = (  build_bitfield(31, 26, OP_LB) |
                 build_bitfield(25, 21, 2) |
                 build_bitfield(20, 16, 22) |
