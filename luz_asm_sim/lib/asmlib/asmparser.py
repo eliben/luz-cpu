@@ -86,7 +86,8 @@ class AsmParser(object):
         self.lexer.build()
         self.tokens = self.lexer.tokens
 
-        self.parser = ply.yacc.yacc(module=self, tabmodule=yacctab)
+        self.parser = ply.yacc.yacc(module=self, tabmodule=yacctab,
+                                    debug=False)
 
     def parse(self, text):
         """ Parses assembly code into intermediate form.
