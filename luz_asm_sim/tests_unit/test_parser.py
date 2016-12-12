@@ -82,7 +82,7 @@ class TestAsmParser(unittest.TestCase):
             [['', 'add', ['r6', 'r2', '$r3']]])
 
         self.assertEqual(self.expand('ll: add 0x25, $r9'),
-            [['ll', 'ad', [37, '$r9']]])
+            [['ll', 'add', [37, '$r9']]])
 
         self.assertEqual(self.expand('lhi 0x25'),
             [['', 'lhi', [37]]])
