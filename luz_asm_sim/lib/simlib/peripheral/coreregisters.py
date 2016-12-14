@@ -2,7 +2,6 @@
 #
 # Luz micro-controller simulator
 # Eli Bendersky (C) 2008-2010
-#
 from .peripheral import Peripheral
 from .errors import (PeripheralMemoryAccessError,
     PeripheralMemoryAlignError)
@@ -33,7 +32,7 @@ class CoreRegisters(Peripheral):
         def __init__(self, value, user_writable):
             self.value = value
             self.user_writable = user_writable
-    
+
     def __init__(self):
         self.exception_vector =         self.CoreReg(0, True)
         self.control_1 =                self.CoreReg(0, True)
@@ -50,23 +49,20 @@ class CoreRegisters(Peripheral):
     def read_mem(self, addr, width):
         if width != 4 or addr % 4 != 0:
             raise PeripheralMemoryAlignError()
-        
+
         if addr in cregs_memory_map:
             creg_name = cregs_memory_map[addr]
             return self[creg_name].value
         else:
             raise PeripheralMemoryAccessError()
-        
+
     def write_mem(self, addr, width, data):
         if width != 4 or addr % 4 != 0:
             raise PeripheralMemoryAlignError()
-        
+
         if addr in cregs_memory_map:
             creg_name = cregs_memory_map[addr]
             if self[creg_name].user_writable:
                 self[creg_name].value = data & MASK_WORD
         else:
             raise PeripheralMemoryAccessError()
-
-
-

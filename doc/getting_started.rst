@@ -1,7 +1,11 @@
-.. contents:: Table of Contents
-   :backlinks: none
-.. sectnum::
+==========================
+ Getting started with Luz
+==========================
 
+.. contents::
+   :backlinks: none
+
+.. sectnum::
 
 Introduction
 ************
@@ -25,6 +29,8 @@ The code of Luz is in the public domain. For more information, see the COPYING f
 
 What is Luz useful for?
 -----------------------
+
+**Note:** this answer is from the time I originally worked on Luz, circa 2008-2010.
 
 I don't know yet. It's a self-educational project of mine, and I learned a lot by working on it. I suppose that Luz's main value is as an educational tool. Its implementation focuses on simplicity and modularity, and is done in Python, which is a portable and very readable high-level language.
 
@@ -76,7 +82,7 @@ Open ``tests_full/loop_simple``. In there you'll find a LASM file named ``loop.a
 
 Take a few minutes to study the code: if you've seen any other assembly code before, it should be simple to understand. Consult the user's manual for the meaning of individual instructions. 
 
-Now, to run the example, go back to ``tests_full`` and execute:
+Now, to run the example, make sure ``PYTHONPATH`` is set properly and execute:
 
 ::
 

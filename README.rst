@@ -1,4 +1,4 @@
-Documentation is in the doc/ directory in the source.
+Documentation is in the ``doc/`` directory.
 Start with `the getting started guide <https://github.com/eliben/luz-cpu/blob/master/doc/getting_started.rst>`_.
 
 The following diagram describes Luz:

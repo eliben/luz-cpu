@@ -34,7 +34,7 @@ There are 32 registers in Luz, numbered R0-R31. Each register is 32 bits long. S
     R30 - Reserved for future needs.
     R31 - Serves as the saved return address in CALL instructions.
 
-When writing Luz assembly code, it is recommended to follow the guidelines for register usage described in (ZZZ - Implicit Hyperlink Target to EABI section on registers use).
+When writing Luz assembly code, it is recommended to follow the guidelines for register usage described in TBD.
 
 Data width
 ==========

@@ -2,7 +2,6 @@
 #
 # Luz micro-controller simulator
 # Eli Bendersky (C) 2008-2010
-#
 import struct, sys
 import operator
 
@@ -23,10 +22,10 @@ from ..asmlib.asm_instructions import register_alias
 
 class LuzSim(object):
     """ Public attributes:
-    
-        pc: 
+
+        pc:
             The value of the program counter
-        halted: 
+        halted:
             A flag specifying whether the CPU is halted (i.e. has
             executed the HALT instruction).
     """
@@ -39,7 +38,7 @@ class LuzSim(object):
             0, 0xFFF, self.cregs)
         self.memory.register_peripheral_map(
             ADDR_DEBUG_QUEUE, ADDR_DEBUG_QUEUE, self.debugq)
-    
+
     def restart(self):
         self.gpr = [0] * 32
         self.cregs = CoreRegisters()
@@ -47,53 +46,53 @@ class LuzSim(object):
         self.pc = USER_MEMORY_START
         self.halted = False
         self.in_exception = False
-    
+
     def step(self):
         try:
             instr = self.memory.read_instruction(self.pc)
             opcode = extract_opcode(instr)
-        
+
             # Dispatch the instruction to a handler
             if opcode in self.op_map:
                 self.op_map[opcode](opcode, instr)
             else:
                 self._exception_enter(ExceptionCause.INVALID_OPCODE)
-            
+
         except (MemoryError, PeripheralMemoryError):
             self._exception_enter(ExceptionCause.MEMORY_ACCESS)
         except ZeroDivisionError:
-            self._exception_enter(ExceptionCause.DIVIDE_BY_ZERO)        
+            self._exception_enter(ExceptionCause.DIVIDE_BY_ZERO)
 
     def run(self):
         while not self.halted:
             self.step()
-    
+
     def reg_value(self, regnum):
         """ The value of the register number 'regnum'
         """
         return self.gpr[regnum]
-    
+
     def reg_alias_value(self, regname):
         """ The value of the register named 'regname' (according
             to the accepted register aliases - $sp, $t0, etc.)
         """
         return self.reg_value(register_alias[regname])
-    
+
     #######################--  PRIVATE --#######################
-    
+
     def _halt_cpu(self):
         self.halted = True
-    
+
     def _exception_enter(self, cause, param=None):
-        """ Invoke CPU exception. 
+        """ Invoke CPU exception.
         """
         if self.in_exception:
             self._halt_cpu()
-        
+
         self.in_exception = True
-        
+
         # Save into exception_return_addr the address from which
-        # to continue execution when the exception handler 
+        # to continue execution when the exception handler
         # returns.
         # If the instruction invoked an exception, execution must
         # continue from the next instruction. On the other hand,
@@ -104,21 +103,21 @@ class LuzSim(object):
             self.cregs.exception_return_addr.value = self.pc
         else:
             self.cregs.exception_return_addr.value = self.pc + 4
-        
+
         # Set the exception cause
         #
         self.cregs.exception_cause.value = exception_cause_code[cause]
-        
+
         # Jump to the exception handler
         #
         self.pc = self.cregs.exception_vector.value
-    
+
     def _exception_exit(self):
         """ Returns from an exception.
         """
         self.pc = self.cregs.exception_return_addr.value
         self.in_exception = False
-    
+
     def _write_reg(self, regnum, value):
         """ Helper method to write into registers. Makes sure
             that the register number is valid.
@@ -127,7 +126,7 @@ class LuzSim(object):
         """
         if 1 <= regnum <= 31:
             self.gpr[regnum] = value
-    
+
     def _create_op_map(self):
         self.op_map = {
             OP_ADD:     self._op_add_sub,
@@ -173,14 +172,14 @@ class LuzSim(object):
             OP_SH:      self._op_store,
             OP_SW:      self._op_store,
         }
-    
+
     #
-    # The following methods help accessing the arguments of 
+    # The following methods help accessing the arguments of
     # instructions.
     #
-    
+
     def _args_3reg(self, instr):
-        """ 3-register 
+        """ 3-register
         """
         rd = extract_bitfield(instr, 25, 21)
         rs = extract_bitfield(instr, 20, 16)
@@ -194,14 +193,14 @@ class LuzSim(object):
         rs = extract_bitfield(instr, 20, 16)
         imm = extract_bitfield(instr, 15, 0)
         return rd, rs, imm
-    
+
     def _args_1reg_imm16(self, instr):
         """ 1-register and 16-bit immediate
         """
         rd = extract_bitfield(instr, 25, 21)
         imm = extract_bitfield(instr, 15, 0)
         return rd, imm
-    
+
     def _args_1reg(self, instr):
         """ 1-register
         """
@@ -213,22 +212,22 @@ class LuzSim(object):
         """
         imm = extract_bitfield(instr, 25, 0)
         return imm
-    
+
     def _args_load_reg_address(self, instr):
         """ For load instructions, returns 'rd' and the load
             address.
         """
         rd, rs, offset = self._args_2reg_imm(instr)
-        
+
         # Offset is stored as 2s complement. Turn it into a normal
         # Python integer.
         # Then compute the final load address.
         #
         int_offset = signed2int(offset, nbits=16)
         address = self.gpr[rs] + int_offset
-        
+
         return rd, address
-    
+
     def _args_store_reg_address(self, instr):
         """ For store instructions, returns 'rs' and the store
             address.
@@ -243,16 +242,16 @@ class LuzSim(object):
 
     #
     # The following methods implement the actual CPU instructions
-    # 
+    #
 
     def _op_add_sub(self, op, instr):
         rd, rs, rt = self._args_3reg(instr)
-        
+
         if op == OP_ADD:
             val = self.gpr[rs] + self.gpr[rt]
         else: # OP_SUB
             val = self.gpr[rs] - self.gpr[rt]
-        
+
         self._write_reg(rd, val & MASK_WORD)
         self.pc += 4
 
@@ -263,23 +262,23 @@ class LuzSim(object):
             val = self.gpr[rs] + imm
         else: # OP_SUBI
             val = self.gpr[rs] - imm
-        
+
         self._write_reg(rd, val & MASK_WORD)
         self.pc += 4
 
     def _op_mul(self, op, instr):
         rd, rs, rt = self._args_3reg(instr)
-        
+
         if op == OP_MULU:
             val = self.gpr[rs] * self.gpr[rt]
             self._write_reg(rd, val & MASK_WORD)
             self._write_reg(rd + 1, (val >> 32) & MASK_WORD)
         else: # OP_MUL
             val = signed2int(self.gpr[rs]) * signed2int(self.gpr[rt])
-            
+
             if num_fits_in_nbits(val, 32, signed=True):
                 self._write_reg(rd, int2signed(val))
-            else:                
+            else:
                 # pack as a 8-byte signed value
                 packed = struct.pack('<q', val)
                 self._write_reg(rd, unpack_word(packed[0:4]))
@@ -289,7 +288,7 @@ class LuzSim(object):
 
     def _op_div(self, op, instr):
         rd, rs, rt = self._args_3reg(instr)
-        
+
         if op == OP_DIVU:
             quot, rem = divmod(self.gpr[rs], self.gpr[rt])
             self._write_reg(rd, quot)
@@ -299,7 +298,7 @@ class LuzSim(object):
                                 signed2int(self.gpr[rt]))
             self._write_reg(rd, int2signed(quot))
             self._write_reg(rd + 1, int2signed(rem))
-        
+
         self.pc += 4
 
     def _op_lui(self, op, instr):
@@ -310,7 +309,7 @@ class LuzSim(object):
 
     def _op_logical_regs(self, op, instr):
         rd, rs, rt = self._args_3reg(instr)
-        
+
         if op == OP_SRL:
             val = self.gpr[rs] >> (self.gpr[rt] & 0x1F)
         elif op == OP_SLL:
@@ -331,7 +330,7 @@ class LuzSim(object):
 
     def _op_logical_imm(self, op, instr):
         rd, rs, imm = self._args_2reg_imm(instr)
-        
+
         if op == OP_ORI:
             val = self.gpr[rs] | (imm & MASK_HALFWORD)
         elif op == OP_ANDI:
@@ -339,10 +338,10 @@ class LuzSim(object):
         elif op == OP_SLLI:
             val = self.gpr[rs] << (imm & 0x1F)
         elif op == OP_SRLI:
-            val = self.gpr[rs] >> (imm & 0x1F)            
+            val = self.gpr[rs] >> (imm & 0x1F)
         else:
             assert False, 'unexpected opcode %s' % op
-        
+
         self._write_reg(rd, val & MASK_WORD)
         self.pc += 4
 
@@ -352,7 +351,7 @@ class LuzSim(object):
 
     def _op_call(self, op, instr):
         imm = self._args_imm26(instr)
-        
+
         self._write_reg(31, self.pc + 4)
         self.pc = (imm * 4) & MASK_WORD
 
@@ -381,21 +380,21 @@ class LuzSim(object):
     def _op_branch_cond(self, op, instr):
         rd, rs, offset = self._args_2reg_imm(instr)
 
-        # cmp_op: 
-        #   The comparison operator - a function taking two 
-        #   arguments and returning the boolean result of the 
+        # cmp_op:
+        #   The comparison operator - a function taking two
+        #   arguments and returning the boolean result of the
         #   comparison.
         # signed_cmp:
         #   Should the comparison arguments be treated as signed?
         #
         cmp_op, signed_cmp = self._branch_op_table[op]
-        
+
         if signed_cmp:
             a = signed2int(self.gpr[rd])
             b = signed2int(self.gpr[rs])
         else:
             a, b = self.gpr[rd], self.gpr[rs]
-        
+
         if cmp_op(a, b):
             self.pc += 4 * signed2int(offset, 16)
         else:
@@ -403,12 +402,12 @@ class LuzSim(object):
 
     def _op_load_byte(self, op, instr):
         rd, address = self._args_load_reg_address(instr)
-        
+
         # Read the data byte from memory
         #
         data = self.memory.read_mem(address, width=1)
         assert data < 2**8
-        
+
         # For OP_LB and negative data, sign extension is required.
         # Otherwise the data is just copied into the register
         # (zero extension).
@@ -417,30 +416,30 @@ class LuzSim(object):
             self.gpr[rd] = 0xFFFFFF00 | data
         else:
             self.gpr[rd] = data
-        
+
         self.pc += 4
-    
+
     def _op_load_halfword(self, op, instr):
         # same as _op_load_byte
         rd, address = self._args_load_reg_address(instr)
         data = self.memory.read_mem(address, width=2)
         assert data < 2**16
-        
+
         if op == OP_LH and signed_is_negative(data, nbits=16):
             self.gpr[rd] = 0xFFFF0000 | data
         else:
             self.gpr[rd] = data
-            
+
         self.pc += 4
 
     def _op_load_word(self, op, instr):
         rd, address = self._args_load_reg_address(instr)
         self.gpr[rd] = self.memory.read_mem(address, width=4)
-        self.pc += 4    
+        self.pc += 4
 
     def _op_store(self, op, instr):
         rs, address = self._args_store_reg_address(instr)
-        
+
         if op == OP_SB:
             mask, width = MASK_BYTE, 1
         elif op == OP_SH:
@@ -449,9 +448,9 @@ class LuzSim(object):
             mask, width = MASK_WORD, 4
         else:
             assert False
-        
+
         data = self.gpr[rs] & mask
-        
+
         self.memory.write_mem(address, width, data)
         self.pc += 4
 
@@ -460,5 +459,3 @@ class LuzSim(object):
 
     def _op_halt(self, op, instr):
         self._halt_cpu()
-
-
