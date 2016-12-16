@@ -23,4 +23,3 @@ addloop:
     bltu $r6, $r5, addloop  # end reached?
 
     halt
-

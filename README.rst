@@ -93,7 +93,7 @@ Luz has a framework of "full tests" in ``luz_asm_lib/tests_full``. Each full tes
 * As examples of using Luz
 * For testing the Luz suite on complete programs
 
-See `tests_full/README.txt
+See `tests_full/README.rst
 <https://github.com/eliben/luz-cpu/blob/master/luz_asm_sim/tests_full/README.rst>`_
 for more details on how to run the full tests. Here I want to focus on one
 simple example.
