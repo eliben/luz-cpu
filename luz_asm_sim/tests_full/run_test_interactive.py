@@ -2,7 +2,6 @@
 # This is useful for debugging full tests.
 #
 # Eli Bendersky (C) 2008-2010
-#
 import os, sys
 import optparse
 
@@ -20,7 +19,7 @@ optparser.add_option('-i', '--interactive', dest='interactive',
 optparser.set_defaults(interactive=False)
 
 # Parse command-line arguments. 'args' should be a single test name
-(options, args) = optparser.parse_args()
+options, args = optparser.parse_args()
 
 if len(args) < 1:
     optparser.print_help()

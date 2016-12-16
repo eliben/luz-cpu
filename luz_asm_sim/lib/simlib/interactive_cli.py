@@ -2,7 +2,6 @@
 #
 # Luz micro-controller simulator
 # Eli Bendersky (C) 2008-2010
-#
 import sys
 from .luzsim import LuzSim
 from ..asmlib.disassembler import disassemble
@@ -14,9 +13,9 @@ from ..commonlib.portability import printme, get_input
 def print_regs(sim, replace_alias=True):
     for i in range(32):
         if replace_alias:
-            regname = register_alias_of[i] 
+            regname = register_alias_of[i]
         else:
-            regname = "$r%s" % i 
+            regname = "$r%s" % i
         printme('%-5s = 0x%08X' % (regname, sim.reg_value(i)))
         if i % 4 == 3:
             printme('\n')
@@ -37,7 +36,7 @@ def show_memory(sim, addr):
             waddr = addr + linenum * 16 + wordnum * 4
             memword = sim.memory.read_mem(waddr, width=4)
             bytes = word2bytes(memword)
-            
+
             for b in bytes:
                 printme("%02X" % b)
             printme('   ')
@@ -47,21 +46,21 @@ def show_memory(sim, addr):
 help_message = r'''
 Supported commands:
 
-    s [nsteps]      Single step. If 'nsteps' is specified, then 'nsteps' 
+    s [nsteps]      Single step. If 'nsteps' is specified, then 'nsteps'
                     steps are done.
-    
+
     r               Print the contents of all registers
-    
+
     sr              Single step and print the contents of all registers
-    
+
     m <addr>        Show memory contents at <addr>
-    
+
     rst             Restart the simulator
-    
+
     ? or help       Print this help message
-    
+
     q               Quit the simulator
-    
+
     set <param> <value>
                     Set parameter value (see next section)
 
@@ -78,38 +77,38 @@ def print_help():
 
 def interactive_cli_sim(img):
     """ An interactive command-line simulation.
-    
+
         img: Executable image
     """
     sim = LuzSim(img)
     printme('\nLUZ simulator started at 0x%08X\n\n'  % sim.pc)
-    
+
     params = {
         'alias':        True,
     }
-    
+
     while True:
         try:
             # show the current instruction
             instr_disasm = disassemble(
                                 word=sim.memory.read_instruction(sim.pc),
                                 replace_alias=params['alias'])
-            
+
             # get a command from the user
             line = get_input('[0x%08X] [%s] >> ' % (sim.pc, instr_disasm)).strip()
-            
+
             # skip empty lines
             if not line.strip():
                 continue
-            
+
             cmd, args = parse_cmd(line)
-            
+
             if cmd == 's':
                 if len(args) >= 1:
                     nsteps = int(args[0])
                 else:
                     nsteps = 1
-                
+
                 for i in range(nsteps):
                     do_step(sim)
             elif cmd == 'q':
@@ -129,7 +128,7 @@ def interactive_cli_sim(img):
                 if len(args) != 2:
                     printme("Error: invalid command\n")
                     continue
-                
+
                 param, value = args[0], args[1]
                 if param in params:
                     params[param] = eval(value)
@@ -149,9 +148,3 @@ def parse_cmd(line):
     """
     tokens = [t.strip() for t in line.split()]
     return tokens[0], tokens[1:]
-
-
-
-
-
-
