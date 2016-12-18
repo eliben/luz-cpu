@@ -2,6 +2,7 @@
 #
 # Luz micro-controller simulator
 # Eli Bendersky (C) 2008-2010
+import readline
 import sys
 from .luzsim import LuzSim
 from ..asmlib.disassembler import disassemble
@@ -43,6 +44,8 @@ def show_memory(sim, addr):
         printme('\n')
 
 
+COMMANDS = ('s', 'r', 'sr', 'm', 'rst', 'help', 'q', 'set')
+
 help_message = r'''
 Supported commands:
 
@@ -75,6 +78,39 @@ def print_help():
     printme(help_message + '\n')
 
 
+def get_matches_for_completion(text, candidates):
+    """Create matches for readline completion for text.
+
+    candidates is a sequence of candidates to match. The returned list ends with
+    a None.
+    """
+    return [w + ' ' for w in candidates if w.startswith(text)] + [None]
+
+
+def make_command_completer(params):
+    def command_completer(text, state):
+        linebuf = readline.get_line_buffer()
+        parts = linebuf.split()
+
+        if len(parts) >= 1 and linebuf.endswith(' '):
+            # If we're past the first part and there is whitespace at the end of
+            # the buffer, it means we're already completing the next part.
+            parts.append('')
+
+        if len(parts) <= 1:
+            # Completing command.
+            matches = get_matches_for_completion(text, COMMANDS)
+            return matches[state]
+        elif len(parts) == 2:
+            command = parts[0]
+            if command == 'set':
+                matches = get_matches_for_completion(text, params)
+                return matches[state]
+        return None
+
+    return command_completer
+
+
 def interactive_cli_sim(img):
     """ An interactive command-line simulation.
 
@@ -86,6 +122,9 @@ def interactive_cli_sim(img):
     params = {
         'alias':        True,
     }
+
+    readline.parse_and_bind('tab: complete')
+    readline.set_completer(make_command_completer(params))
 
     while True:
         try:
