@@ -161,22 +161,27 @@ def interactive_cli_sim(img):
                 do_step(sim)
                 print_regs(sim, replace_alias=params['alias'])
             elif cmd == 'm':
+                if len(args) != 1:
+                    printme("Error: expected memory address\n")
+                    continue
                 addr = args[0]
-                show_memory(sim, eval(addr))
+                show_memory(sim, int(addr, 0))
             elif cmd == 'set':
                 if len(args) != 2:
                     printme("Error: invalid command\n")
                     continue
-
                 param, value = args[0], args[1]
                 if param in params:
-                    params[param] = eval(value)
+                    params[param] = int(value, 0)
                 else:
                     printme("Error: no such parameter '%s'\n" % param)
             elif cmd == '?' or cmd == 'help':
                 print_help()
             else:
                 printme('Unknown command. To get some help, type ? or help\n')
+        except (EOFError, KeyboardInterrupt):
+            printme("\nExiting...\n")
+            break
         except Exception:
             e = sys.exc_info()[1]
             printme('\n!!ERROR!!: %s %s\n' % (type(e), str(e)))
