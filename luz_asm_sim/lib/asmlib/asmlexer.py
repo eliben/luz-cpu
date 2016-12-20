@@ -14,43 +14,43 @@ from ply.lex import TOKEN
 class AsmLexer(object):
     def __init__(self, error_func):
         self.error_func = error_func
-        
+
     def build(self, **kwargs):
-        """ Builds the lexer from the specification. Must be 
+        """ Builds the lexer from the specification. Must be
             called after the lexer object is created.
         """
         self.lexer = ply.lex.lex(object=self, **kwargs)
-        
+
     def input(self, text):
         self.lexer.input(text)
-    
+
     def token(self):
         return self.lexer.token()
-    
+
     def reset_lineno(self):
         self.lexer.lineno = 1
 
     #######################--  PRIVATE --#######################
 
     tokens = (
-        'ID', 'DIRECTIVE', 
+        'ID', 'DIRECTIVE',
         'NEWLINE',
         'DEC_NUM', 'HEX_NUM',
         'STRING',
         'COLON', 'COMMA',
         'LPAREN', 'RPAREN',
     )
-    
+
     ##
     ## Regexes for use in tokens
     ##
     identifier = r'[a-zA-Z_\$][0-9a-zA-Z_]*'
     directive = r'\.'+identifier
-    
+
     escape_char = r'\\["\\nt]'
     string_char = r'([^"\\\n]|'+escape_char+')'
     string = '"'+string_char+'*"'
-    
+
     ##
     ## Token rules
     ##
@@ -58,23 +58,23 @@ class AsmLexer(object):
     t_COMMA     = r','
     t_LPAREN    = r'\('
     t_RPAREN    = r'\)'
-    
+
     t_ignore    = ' \t'
-    
+
     def t_NEWLINE(self, t):
         r'\n+'
         t.lexer.lineno += t.value.count('\n')
         return t
-    
+
     def t_COMMENT(self, t):
         r'\#.*'
         pass
-    
+
     @TOKEN(string)
     def t_STRING(self, t):
         t.value = self._translate_string(t.value)
         return t
-    
+
     @TOKEN(identifier)
     def t_ID(self, t):
         t.value = t.value.lower()
@@ -88,7 +88,7 @@ class AsmLexer(object):
     def t_HEX_NUM(self, t):
         r'\-?0[xX][0-9a-fA-F]+'
         t.value = int(t.value, 16)
-        return t    
+        return t
 
     def t_DEC_NUM(self, t):
         r'\-?\d+'
@@ -106,7 +106,7 @@ class AsmLexer(object):
     def _error(self, msg):
         self.error_func(msg)
         self.lexer.skip(1)
-        
+
     def _make_tok_location(self, t):
         return 'line %s' % t.lineno
 
@@ -119,12 +119,12 @@ class AsmLexer(object):
 
     def _translate_string(self, s):
         """ Given a string as accepted by the lexer, translates
-            it into a real string (truncates "s, inserts real 
+            it into a real string (truncates "s, inserts real
             escape characters where needed).
         """
         t = ''
         escape = False
-        
+
         for i, c in enumerate(s[1:-1]):
             if escape:
                 t += self._trans_str_table[c]
@@ -135,6 +135,5 @@ class AsmLexer(object):
                 else:
                     t += c
                     escape = False
-        
-        return t
 
+        return t
