@@ -28,13 +28,15 @@ Luz is a 32-bit RISC CPU. Its design was mostly inspired by MIPS, with some infl
 Registers
 =========
 
-There are 32 registers in Luz, numbered R0-R31. Each register is 32 bits long. Some registers have special meaning for the CPU::
+There are 32 registers in Luz, numbered R0-R31. Each register is 32 bits long.
+Some registers have special meaning for the CPU::
 
     R0  - Always contains 0. Writes to R0 are ignored.
     R30 - Reserved for future needs.
     R31 - Serves as the saved return address in CALL instructions.
 
-When writing Luz assembly code, it is recommended to follow the guidelines for register usage described in TBD.
+When writing Luz assembly code, it is recommended to follow the guidelines for
+register usage described in `Assembly syntax`_.
 
 Data width
 ==========
@@ -56,7 +58,7 @@ Numeric quantities stored in the registers or instructions of Luz can be treated
 
 
 
------------- 
+------------
 
 
 
@@ -66,7 +68,70 @@ Assembly programming and EABI
 Assembly syntax
 ===============
 
-sdf
+Following the convention of MIPS assemblers, Luz defines mnemonic ("alias")
+names for some registers:
+
+.. sourcecode::
+
+    register_alias = {
+        '$zero':    0,
+        '$at':      1,
+
+        '$v0':      2,
+        '$v1':      3,
+
+        '$a0':      4,
+        '$a1':      5,
+        '$a2':      6,
+        '$a3':      7,
+
+        '$t0':      8,
+        '$t1':      9,
+        '$t2':      10,
+        '$t3':      11,
+        '$t4':      12,
+        '$t5':      13,
+        '$t6':      14,
+        '$t7':      15,
+        '$t8':      16,
+        '$t9':      17,
+
+        '$s0':      18,
+        '$s1':      19,
+        '$s2':      20,
+        '$s3':      21,
+        '$s4':      22,
+        '$s5':      23,
+        '$s6':      24,
+        '$s7':      25,
+
+        '$k0':      26,
+        '$k1':      27,
+        '$fp':      28,
+
+        '$sp':      29,
+        '$re':      30,
+        '$ra':      31,
+    }
+
+These aliases can be used for a system ABI, agreed upon between assemblers and
+compilers.
+
+* ``$at``: assembler temporary, reserverd for use by the assembler.
+* ``$v0-1``: return values from procedures.
+* ``$a0-3``: arguments to procedures.
+* ``$t0-9``: registers the callee is free to clobber.
+* ``$s0-7``: registers the callee must save and restore.
+* ``$k0-1``: registers for OS kernels (for things like interrupts and syscalls).
+* ``$fp``: frame pointer.
+* ``$sp``: stack pointer.
+* ``$re``: reserved register -- don't use.
+* ``$ra``: saved return address for CALL instructions.
+
+Note that the usage of these aliases is entirely optional, for convenience. When
+writing code that doesn't interface with other components, one is free to use
+whatever convention they choose. The Luz assembler and disassembler understand
+both the aliases and the raw register numbers.
 
 Directives
 ==========
@@ -74,17 +139,17 @@ Directives
 dsf
 
 
------------- 
+------------
 
 
 
-Appendix A. Instruction set 
+Appendix A. Instruction set
 ***************************
 
 Introduction
 ============
 
-This section presents all the instructions supported by the Luz CPU. Some are not real instructions, but rather pseudo-instructions provided by the assembler and translated into other instructions (marked by ``(*)``). 
+This section presents all the instructions supported by the Luz CPU. Some are not real instructions, but rather pseudo-instructions provided by the assembler and translated into other instructions (marked by ``(*)``).
 
 
 Some nomenclature::
@@ -103,10 +168,10 @@ Some nomenclature::
     mem<n>      - n-bit access to memory
 
 
-``ADD`` - add 
+``ADD`` - add
 =============
 
-``ADD Rd, Rs, Rt                # Rd <- Rs + Rt``          
+``ADD Rd, Rs, Rt                # Rd <- Rs + Rt``
 
 Addition is unsigned, without overflow detection. Signed numbers can be added with the same instruction, but the programmer is responsible for taking care of their ranges and possible overflows.
 
@@ -130,7 +195,7 @@ The constant is assumed to be unsigned. If you want to add a negative constant, 
 Examples::
 
     addi $r8, $r7, 5        # $r8 <- $r7 + 5
-    
+
     .define TWO, 2
     addi $r8, $r7, TWO      # $r8 <- $r7 + 2
 
@@ -163,7 +228,7 @@ Encoding::
 
 Subtraction is unsigned, without overflow detection. Signed numbers can be added with the same instruction, but the programmer is responsible for taking care of their ranges and possible overflows.
 
-The constant is assumed to be unsigned. 
+The constant is assumed to be unsigned.
 
 Encoding::
 
@@ -301,7 +366,7 @@ Pseudo-instruction, translated to::
 
 ``SLL Rd, Rs, Rt                # Rd <- Rs << Rt[4:0]``
 
-``Rd`` is assigned the value of ``Rs`` shifted left by the value of the 5 lower bits of ``Rt``. 0 is shifted into the lower bits of ``Rd``. 
+``Rd`` is assigned the value of ``Rs`` shifted left by the value of the 5 lower bits of ``Rt``. 0 is shifted into the lower bits of ``Rd``.
 
 Encoding::
 
@@ -317,7 +382,7 @@ Encoding::
 
 ``SLLI Rd, Rs, const16          # Rd <- Rs << const16[4:0]``
 
-``Rd`` is assigned the value of ``Rs`` shifted left by the value of the 5 lower bits of ``const16``. 0 is shifted into the lower bits of ``Rd``. 
+``Rd`` is assigned the value of ``Rs`` shifted left by the value of the 5 lower bits of ``const16``. 0 is shifted into the lower bits of ``Rd``.
 
 Encoding::
 
@@ -331,7 +396,7 @@ Encoding::
 
 ``SRL Rd, Rs, Rt                # Rd <- Rs >> Rt[4:0]``
 
-``Rd`` is assigned the value of ``Rs`` shifted right by the value of the 5 lower bits of ``Rt``. 0 is shifted into the higher bits of ``Rd``. 
+``Rd`` is assigned the value of ``Rs`` shifted right by the value of the 5 lower bits of ``Rt``. 0 is shifted into the higher bits of ``Rd``.
 
 Encoding::
 
@@ -347,7 +412,7 @@ Encoding::
 
 ``SRLI Rd, Rs, const16          # Rd <- Rs >> const16[4:0]``
 
-``Rd`` is assigned the value of ``Rs`` shifted right by the value of the 5 lower bits of ``const16``. 0 is shifted into the higher bits of ``Rd``. 
+``Rd`` is assigned the value of ``Rs`` shifted right by the value of the 5 lower bits of ``const16``. 0 is shifted into the higher bits of ``Rd``.
 
 Encoding::
 
@@ -453,7 +518,7 @@ Encoding::
     15:11   Rt
     10:0    reserved
 
-``LB`` - load signed byte 
+``LB`` - load signed byte
 =========================
 
 ``LB Rd, off16(Rs)              # Rd <- mem8(Rs + off16)``
@@ -595,7 +660,7 @@ Encoding::
 
 ``B off26                       # PC <- PC + off26 * 4``
 
-The offset is relative to the program counter. ``off26`` is treated as signed. 
+The offset is relative to the program counter. ``off26`` is treated as signed.
 
 Encoding::
 

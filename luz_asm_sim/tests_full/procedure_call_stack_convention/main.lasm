@@ -13,36 +13,36 @@ asm_main:
     #
     addi $r14, $zero, 0x562
     addi $r15, $zero, 0x18A
-    
+
     subi $sp, $sp, 8            # push r14 and r15 on stack
     sw $r14, 4($sp)
     sw $r15, 0($sp)
-    
+
     call nummult                # call the procedure
-    lw $s5, 0($sp)              # return value 
+    lw $s5, 0($sp)              # return value
     addi $sp, $sp, 12           # clear arguments and return value
-    
+
     # if s7 == sp, turn bit 0 of $r10 on
     bne $s7, $sp, badval_sp_r18
-    ori $s6, $s6, 0x1 
+    ori $s6, $s6, 0x1
 badval_sp_r18:
-    
+
     #
     # Here we call scalarproduct
     #
     li $t1, arr1                # t1: address of array1
     li $t2, arr2                # t2: address of array2
-    li $t0, len               
+    li $t0, len
     lw $t3, 0($t0)              # t3: value of len
-    
+
     subi $sp, $sp, 12           # push arguments on stack
     sw $t1, 8($sp)
     sw $t2, 4($sp)
     sw $t3, 0($sp)
-    
+
     call scalarproduct          # call the procedure and place
     lw $s4, 0($sp)              # ... the result into s4
-    
+
     nop
     halt
 
