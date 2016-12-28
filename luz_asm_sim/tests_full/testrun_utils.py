@@ -9,18 +9,6 @@ from lib.asmlib.linker import Linker
 from lib.commonlib.luz_defs import USER_MEMORY_START, USER_MEMORY_SIZE
 
 
-def subdirs(startdir='.', excludes=set()):
-    """ Returns an iterator of subdirectories contained in the
-        given one (non-recursively). Full directory path names
-        are returned.
-    """
-    for dir in os.listdir(startdir):
-        if not dir in excludes:
-            fullpath = os.path.join(startdir, dir)
-            if os.path.isdir(fullpath):
-                yield fullpath
-
-
 def get_test_functions(testfile):
     """ Given the path of a testfile, extracts all the test_
         functions from it. Returns an iterator

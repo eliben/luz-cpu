@@ -13,8 +13,7 @@ from lib.simlib.luzsim import LuzSim
 from lib.commonlib.utils import extract_bitfield
 from lib.commonlib.portability import printme
 
-from testrun_utils import (
-    subdirs, get_test_functions, link_asmfiles)
+from testrun_utils import get_test_functions, link_asmfiles
 
 class FullTestError(RuntimeError): pass
 
@@ -53,14 +52,18 @@ def run_test_dir(dirpath):
 
 def run_all(startdir='.'):
     t1 = time.time()
-    for subdir in subdirs(startdir, excludes=set(['.svn'])):
-        try:
-            printme('Test %s...' % subdir)
-            status = run_test_dir(subdir)
-            printme(status + '\n')
-        except Exception:
-            printme('Caught exception for dir: %s\n' % subdir)
-            raise
+    for dir in os.listdir(startdir):
+        if not os.path.isdir(dir):
+            continue
+        if not dir.startswith(('.svn', '__')):
+            subdir = os.path.join(startdir, dir)
+            try:
+                printme('Test %s...' % subdir)
+                status = run_test_dir(subdir)
+                printme(status + '\n')
+            except Exception:
+                printme('Caught exception for dir: %s\n' % subdir)
+                raise
 
     printme('------------------------------------------------------\n')
     printme('Elapsed: %.3fs\n' % (time.time() - t1))

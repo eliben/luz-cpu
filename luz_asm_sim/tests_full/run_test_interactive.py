@@ -42,3 +42,4 @@ else:
     printme('Finished successfully...\n')
     printme('Debug queue contents:\n')
     printme(map(lambda n: '0x%X' % n, sim.debugq.items))
+    printme('\n')

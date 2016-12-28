@@ -7,6 +7,7 @@ import sys
 
 
 def printme(s):
+    # This function exists because I was initially developing Luz on Python 2.5
     sys.stdout.write(str(s))
 
 
@@ -37,4 +38,3 @@ def exec_function(source, filename, global_map):
     exec compile(source, filename, "exec") in global_map
 """,
     "<exec_function>", "exec"))
-
