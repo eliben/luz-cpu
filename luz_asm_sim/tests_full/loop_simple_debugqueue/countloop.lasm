@@ -1,0 +1,20 @@
+# Counts from 0 to 9 [inclusive], pushing these numbers into the debug queue
+
+    .segment code
+    .global asm_main
+
+    .define ADDR_DEBUG_QUEUE, 0xF0000
+
+asm_main:
+    # $k0 always points to ADDR_DEBUG_QUEUE
+    li $k0, ADDR_DEBUG_QUEUE
+
+    li $r9, 10                          # r9 is the loop limit
+    li $r5, 0                           # r5 is the loop counter
+
+loop:
+    sw $r5, 0($k0)                      # store loop counter to debug queue
+    addi $r5, $r5, 1                    # increment loop counter
+    bltu $r5, $r9, loop                 # loop back if not reached limit
+
+    halt
