@@ -6,10 +6,8 @@
 #
 from .assembler import Assembler
 from .linker import Linker
-from ..commonlib.luz_defs import (
-    USER_MEMORY_START, USER_MEMORY_SIZE)
-from ..commonlib.binaryappdata import (
-    BinaryAppDataStore, DataFormatterIntelHex)
+from ..commonlib.luz_defs import USER_MEMORY_START, USER_MEMORY_SIZE
+from ..commonlib.binaryappdata import BinaryAppDataStore, DataFormatterIntelHex
 from ..commonlib.utils import pack_bytes
 
 
@@ -20,7 +18,7 @@ def link_asmfiles(asmfiles):
     # assemble all the .lasm files
     asm = Assembler()
     objs = [asm.assemble(filename=f) for f in asmfiles]
-    
+
     # link into a binary image
     link = Linker(USER_MEMORY_START, USER_MEMORY_SIZE)
     img = link.link(objs)
@@ -36,11 +34,10 @@ def assemble_binary(
     # Assemble and link all input files into a binary image
     #
     image_str = pack_bytes(link_asmfiles(asmfiles))
-    
+
     # Write the image to the output file in Intel HEX format
     #
     datastore = BinaryAppDataStore()
     datastore.add_record(ulba, image_str)
     intel_formatter = DataFormatterIntelHex(datastore)
     intel_formatter.write(filename=output)
-
