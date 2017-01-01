@@ -52,10 +52,8 @@ class Linker(object):
             Note: object files may be modified as a result of this
             call, to resolve import and relocations.
         """
-        # Throughout the linking code we refer to objects
-        # by their offset in the object_files list. This offset
-        # uniquely identifies an object.
-        #
+        # Throughout the linking code we refer to objects by their offset in the
+        # object_files list. This offset uniquely identifies an object.
         self.object_files = object_files
         startup_object = self._assemble_startup_code()
         self.object_files.append(startup_object)
@@ -87,8 +85,7 @@ class Linker(object):
 
     def _assemble_startup_code(self):
         sp_ptr = self.initial_offset + self.mem_size - 4
-        startup_code = LINKER_STARTUP_CODE.substitute(
-            SP_POINTER=sp_ptr)
+        startup_code = LINKER_STARTUP_CODE.substitute(SP_POINTER=sp_ptr)
 
         asm = Assembler()
         startup_object = asm.assemble(str=startup_code)
@@ -125,7 +122,6 @@ class Linker(object):
         """
         # Step 1: Compute the total sizes of all segments that
         # exist in the object files
-        #
         segment_size = defaultdict(int)
         for obj in object_files:
             for segment in obj.seg_data:
@@ -141,7 +137,6 @@ class Linker(object):
         # The __startup segment is placed before all others (i.e.
         # it's mapped at 'offset'), and the __heap segment is
         # placed after all others.
-        #
         segment_ptr = {}
         ptr = offset
 
@@ -163,7 +158,6 @@ class Linker(object):
         # Step 3: Create the segment map. For each segment in each
         # object, record the memory offset where it will be
         # mapped.
-        #
         segment_map = []
         for obj in object_files:
             obj_segment_map = {}
@@ -445,9 +439,9 @@ class Linker(object):
 
 
 # The special segments added by the linker.
-# __startup: 3 words
-# __heap: 1 word
 #
+# __startup: 3 words -- this segment is mapped to the initial offset.
+# __heap: 1 word
 LINKER_STARTUP_CODE = string.Template(r'''
         .segment __startup
 
