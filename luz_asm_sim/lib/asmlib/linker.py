@@ -44,8 +44,6 @@ class Linker(object):
         self.initial_offset = initial_offset
         self.mem_size = mem_size
 
-        self.startup_object = self._assemble_startup_code()
-
     def link(self, object_files=[]):
         """ Link the given objects. object_files is a list of
             ObjectFile. The objects are linked with the special
