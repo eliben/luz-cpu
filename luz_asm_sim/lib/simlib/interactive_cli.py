@@ -44,7 +44,16 @@ def show_memory(sim, addr):
         printme('\n')
 
 
-COMMANDS = ('s', 'r', 'sr', 'm', 'rst', 'help', 'q', 'set')
+def show_disassembly(sim, first_address, num, replace_alias):
+    for offset in range(num):
+        address = first_address + offset * 4
+        word = sim.memory.read_mem(address, width=4)
+        assembly = disassemble(word, replace_alias=replace_alias)
+        bytes_text = '{:02X}{:02X}{:02X}{:02X}'.format(*word2bytes(word))
+        print('0x{:08X}:   {}   {}'.format(address, bytes_text, assembly))
+
+
+COMMANDS = ('s', 'r', 'sr', 'm', 'd', 'rst', 'help', 'q', 'set')
 
 help_message = r'''
 Supported commands:
@@ -57,6 +66,12 @@ Supported commands:
     sr              Single step and print the contents of all registers
 
     m <addr>        Show memory contents at <addr>
+
+    d               Show disassembled instructions at current PC
+
+    d <addr>        Show disassembled instructions at <addr>
+
+    d <addr> <n>    Show <n> disassembled instructions at <addr>
 
     rst             Restart the simulator
 
@@ -166,6 +181,19 @@ def interactive_cli_sim(img):
                     continue
                 addr = args[0]
                 show_memory(sim, int(addr, 0))
+            elif cmd == 'd':
+                num = 8
+                if len(args) == 0:
+                    addr = sim.pc
+                elif len(args) == 1:
+                    addr = int(args[0], 0)
+                elif len(args) == 2:
+                    addr = int(args[0], 0)
+                    num = int(args[1], 0)
+                else:
+                    printme("Error: too many parameters\n")
+                    continue
+                show_disassembly(sim, addr, num, replace_alias=params['alias'])
             elif cmd == 'set':
                 if len(args) != 2:
                     printme("Error: invalid command\n")
