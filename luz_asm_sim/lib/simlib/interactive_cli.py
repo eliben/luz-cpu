@@ -45,12 +45,19 @@ def show_memory(sim, addr):
 
 
 def show_disassembly(sim, first_address, num, replace_alias):
+    """ Disassemble and print instructions from the simulator's memory.
+
+        sim: The simulator.
+        first_address: The address of the first instruction to disassemble and print.
+        num: The number of consecutive instructions to disassemble.
+        replace_alias: If true, show alias names of registers instead of plain names.
+    """
     for offset in range(num):
         address = first_address + offset * 4
         word = sim.memory.read_mem(address, width=4)
         assembly = disassemble(word, replace_alias=replace_alias)
         bytes_text = '{:02X}{:02X}{:02X}{:02X}'.format(*word2bytes(word))
-        print('0x{:08X}:   {}   {}'.format(address, bytes_text, assembly))
+        printme('0x{:08X}:   {}   {}'.format(address, bytes_text, assembly))
 
 
 COMMANDS = ('s', 'r', 'sr', 'm', 'd', 'rst', 'help', 'q', 'set')
