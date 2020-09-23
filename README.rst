@@ -1,5 +1,15 @@
+===
+Luz
+===
+
+.. image:: https://github.com/eliben/luz-cpu/workflows/luz-tests/badge.svg
+  :align: center
+  :target: https://github.com/eliben/luz-cpu/actions
+
+----
+
 .. contents::
-   :backlinks: none
+    :backlinks: none
 
 .. sectnum::
 
@@ -160,13 +170,3 @@ CPU stopped executing ("halted"). ``$r8`` holds the sum of the array. Now you
 can enter the ``q`` command to quit the interactive simulator.
 
 The other examples can be run similarly.
-
-CI Status
-*********
-
-**luz-cpu** has automatic testing enabled through the convenient
-`Travis CI project <https://travis-ci.org>`_. Here is the latest build status:
-
-.. image:: https://travis-ci.org/eliben/luz-cpu.png?branch=master
-  :align: center
-  :target: https://travis-ci.org/eliben/luz-cpu

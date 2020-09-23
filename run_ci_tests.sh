@@ -1,5 +1,4 @@
 #!/bin/bash
-# For Travis CI testing.
 set -eu
 set -o pipefail
 
