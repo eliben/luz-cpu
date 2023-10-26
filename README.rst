@@ -2,7 +2,7 @@
 Luz
 ===
 
-.. image:: https://github.com/eliben/luz-cpu/workflows/luz-tests/badge.svg
+.. image:: https://github.com/eliben/luz-cpu/workflows/main.yml/badge.svg
   :align: center
   :target: https://github.com/eliben/luz-cpu/actions
 
